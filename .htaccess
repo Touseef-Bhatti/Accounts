@@ -1,0 +1,8 @@
+RewriteEngine On
+RewriteBase /
+
+# Block sensitive paths
+RewriteRule ^(\.env|composer\.(json|lock)|storage/|vendor/) - [F,L]
+
+# PHP front controller style (optional clean URLs off for shared hosting simplicity)
+DirectoryIndex index.php
