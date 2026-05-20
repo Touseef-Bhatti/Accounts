@@ -13,6 +13,10 @@ class Mailer
     {
         $mail = new PHPMailer(true);
         try {
+            $isDebug = filter_var(env('APP_DEBUG', false), FILTER_VALIDATE_BOOLEAN);
+            $mail->SMTPDebug = $isDebug ? 2 : 0;
+            $mail->Debugoutput = 'error_log';
+            
             $mail->isSMTP();
             $mail->Host = (string) env('MAIL_HOST', 'mailhog');
             $username = (string) env('MAIL_USERNAME', '');
@@ -29,8 +33,12 @@ class Mailer
                 $mail->SMTPAutoTLS = false;
             }
             $mail->Port = (int) env('MAIL_PORT', 1025);
+            $mail->CharSet = 'UTF-8';
 
             $from = (string) env('MAIL_FROM_ADDRESS', $mail->Username);
+            if (empty($from)) {
+                $from = 'noreply@' . (parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST) ?: 'localhost');
+            }
             $fromName = (string) env('MAIL_FROM_NAME', 'Bhatti Export Documents');
             $mail->setFrom($from, $fromName);
             $mail->addAddress($toEmail);
@@ -42,9 +50,8 @@ class Mailer
             $mail->send();
             return true;
         } catch (Exception $e) {
-            if (filter_var(env('APP_DEBUG', false), FILTER_VALIDATE_BOOLEAN)) {
-                error_log('Mail error: ' . $e->getMessage());
-            }
+            error_log('Mail error: ' . $e->getMessage());
+            error_log('Mail trace: ' . $e->getTraceAsString());
             return false;
         }
     }

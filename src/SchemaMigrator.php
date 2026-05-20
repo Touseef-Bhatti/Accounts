@@ -29,6 +29,26 @@ class SchemaMigrator
         self::migrateLineItems($pdo);
         self::migrateGatePasses($pdo);
         self::migrateFieldSuggestions($pdo);
+        self::migrateAuthorizedEmails($pdo);
+        self::migrateLoginAttempts($pdo);
+    }
+    
+    private static function migrateLoginAttempts(PDO $pdo): void
+    {
+        if (self::tableExists($pdo, 'login_attempts')) {
+            return;
+        }
+        $pdo->exec(<<<'SQL'
+CREATE TABLE login_attempts (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(45) DEFAULT NULL,
+    attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_attempt_email (email),
+    INDEX idx_attempt_ip (ip_address),
+    INDEX idx_attempt_time (attempted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL);
     }
 
     private static function columnExists(PDO $pdo, string $table, string $column): bool
@@ -147,6 +167,19 @@ SQL);
                     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
+        }
+    }
+    
+    private static function migrateAuthorizedEmails(PDO $pdo): void
+    {
+        if (!self::tableExists($pdo, 'authorized_emails')) {
+            return;
+        }
+        if (!self::columnExists($pdo, 'authorized_emails', 'name')) {
+            $pdo->exec('ALTER TABLE authorized_emails ADD COLUMN name VARCHAR(255) DEFAULT NULL AFTER email');
+        }
+        if (!self::columnExists($pdo, 'authorized_emails', 'password')) {
+            $pdo->exec('ALTER TABLE authorized_emails ADD COLUMN password VARCHAR(255) DEFAULT NULL AFTER name');
         }
     }
 }

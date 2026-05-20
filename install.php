@@ -68,6 +68,8 @@ SQL, 'accounts');
 CREATE TABLE IF NOT EXISTS authorized_emails (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) DEFAULT NULL,
+    password VARCHAR(255) DEFAULT NULL,
     is_active TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -86,6 +88,18 @@ CREATE TABLE IF NOT EXISTS otp_codes (
     INDEX idx_otp_expires (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'otp_codes');
+
+        runSql($pdo, <<<'SQL'
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(45) DEFAULT NULL,
+    attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_attempt_email (email),
+    INDEX idx_attempt_ip (ip_address),
+    INDEX idx_attempt_time (attempted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL, 'login_attempts');
 
         runSql($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS document_sets (

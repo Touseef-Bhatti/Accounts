@@ -18,6 +18,11 @@ class Auth
         return $_SESSION['user_email'] ?? null;
     }
 
+    public static function userName(): ?string
+    {
+        return $_SESSION['user_name'] ?? null;
+    }
+
     public static function requireLogin(): void
     {
         if (!self::check()) {
@@ -25,9 +30,12 @@ class Auth
         }
     }
 
-    public static function login(string $email): void
+    public static function login(string $email, ?string $name = null): void
     {
         $_SESSION['user_email'] = strtolower(trim($email));
+        if ($name) {
+            $_SESSION['user_name'] = $name;
+        }
         session_regenerate_id(true);
     }
 
@@ -54,6 +62,82 @@ class Auth
 
         $fromEnv = array_filter(array_map('strtolower', array_map('trim', explode(',', (string) env('AUTHORIZED_EMAILS', '')))));
         return in_array($email, $fromEnv, true);
+    }
+    
+    public static function isRateLimited(string $email): bool
+    {
+        $email = strtolower(trim($email));
+        $ip = $_SERVER['REMOTE_ADDR'] ?? null;
+        $pdo = Database::connection();
+        $maxAttempts = 3;
+        $timeWindow = 60;
+        
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) FROM login_attempts 
+             WHERE email = ? AND attempted_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)'
+        );
+        $stmt->execute([$email, $timeWindow]);
+        $countByEmail = (int)$stmt->fetchColumn();
+        
+        if ($countByEmail >= $maxAttempts) {
+            return true;
+        }
+        
+        if ($ip) {
+            $stmt = $pdo->prepare(
+                'SELECT COUNT(*) FROM login_attempts 
+                 WHERE ip_address = ? AND attempted_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)'
+            );
+            $stmt->execute([$ip, $timeWindow]);
+            $countByIp = (int)$stmt->fetchColumn();
+            
+            if ($countByIp >= $maxAttempts) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    public static function recordLoginAttempt(string $email): void
+    {
+        $email = strtolower(trim($email));
+        $ip = $_SERVER['REMOTE_ADDR'] ?? null;
+        $pdo = Database::connection();
+        
+        $stmt = $pdo->prepare('INSERT INTO login_attempts (email, ip_address) VALUES (?, ?)');
+        $stmt->execute([$email, $ip]);
+        
+        $pdo->prepare('DELETE FROM login_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL 1 HOUR)')->execute();
+    }
+
+    public static function verifyPassword(string $email, string $password): ?array
+    {
+        $email = strtolower(trim($email));
+        $pdo = Database::connection();
+
+        $stmt = $pdo->prepare(
+            'SELECT id, name, password FROM authorized_emails WHERE email = ? AND is_active = 1 LIMIT 1'
+        );
+        $stmt->execute([$email]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return null;
+        }
+
+        if (!empty($row['password'])) {
+            if (password_verify($password, $row['password'])) {
+                return ['name' => $row['name']];
+            }
+            return null;
+        }
+
+        $fromEnv = array_filter(array_map('strtolower', array_map('trim', explode(',', (string) env('AUTHORIZED_EMAILS', '')))));
+        if (in_array($email, $fromEnv, true)) {
+            return ['name' => null];
+        }
+
+        return null;
     }
 
     public static function createOtp(string $email): string
