@@ -273,10 +273,9 @@ function collectGatePass(array $post): array
 
 
 function normalizeDoc(array $d): array
-
 {
 
-    foreach (['subtotal', 'freight', 'insurance', 'total', 'total_gross_kg', 'total_net_kg', 'total_cbm', 'total_packages'] as $n) {
+    foreach (['subtotal', 'freight', 'insurance', 'total', 'total_gross_kg', 'total_net_kg', 'total_cbm', 'total_packages', 'quantity', 'unit_price', 'total_value'] as $n) {
 
         if (isset($d[$n])) {
 

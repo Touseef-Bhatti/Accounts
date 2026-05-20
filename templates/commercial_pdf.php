@@ -129,8 +129,7 @@ $html .= '<li>Certified that the goods are processed by "' . htmlspecialchars($s
 $html .= '</ul>';
 
 
-
-$html .= "<p class='sign-line'>Authorized Signatory: _______________________</p>";
+$html .= "<table class='sign-row' style='margin-top:40px;'><tr><td style='width:50%;text-align:center;border-top:1px solid #000;padding-top:10px;'>Seller Signature & Stamp</td><td style='width:50%;text-align:center;border-top:1px solid #000;padding-top:10px;'>Buyer Signature & Stamp</td></tr></table>";
 
 $html .= '</div>';
 

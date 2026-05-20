@@ -128,6 +128,8 @@ if (!empty($doc['validity_date'])) {
 
 $html .= '</ul></div>';
 
+$html .= "<table class='sign-row' style='margin-top:60px;'><tr><td style='width:50%;text-align:center;border-top:1px solid #000;padding-top:10px;'>Seller Signature & Stamp</td><td style='width:50%;text-align:center;border-top:1px solid #000;padding-top:10px;'>Buyer Signature & Stamp</td></tr></table>";
+
 $html .= '</div>';
 
 

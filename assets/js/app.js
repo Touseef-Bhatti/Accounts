@@ -19,43 +19,59 @@
     }
   }
 
+  function recalcContract() {
+    const quantityInput = document.querySelector('input[name="ec[quantity]"]');
+    const unitPriceInput = document.querySelector('input[name="ec[unit_price]"]');
+    const totalValueInput = document.querySelector('input[name="ec[total_value]"]');
+    
+    if (!quantityInput || !unitPriceInput || !totalValueInput) return;
+    
+    const qty = parseFloat(quantityInput.value.replace(/,/g, '')) || 0;
+    const price = parseFloat(unitPriceInput.value.replace(/,/g, '')) || 0;
+    const total = qty * price;
+    totalValueInput.value = total.toFixed(2);
+  }
+
   function recalcTotals() {
     const table = document.querySelector('.line-items');
-    if (!table) return;
+    if (table) {
+      const type = table.dataset.type;
+      if (type === 'proforma' || type === 'commercial') {
+        let subtotal = 0;
+        table.querySelectorAll('tbody tr').forEach((row) => {
+          recalcRow(row);
+          subtotal += parseFloat(row.querySelector('.amount')?.value) || 0;
+        });
+
+        let subtotalInput, freightInput, insuranceInput, totalInput;
+        if (type === 'proforma') {
+          subtotalInput = document.getElementById('pi_subtotal') || document.querySelector('input[name="pi[subtotal]"]');
+          freightInput = document.querySelector('input[name="pi[freight]"]');
+          insuranceInput = document.querySelector('input[name="pi[insurance]"]');
+          totalInput = document.getElementById('pi_total') || document.querySelector('input[name="pi[total]"]');
+        } else if (type === 'commercial') {
+          subtotalInput = document.querySelector('input[name="ci[subtotal]"]');
+          freightInput = document.querySelector('input[name="ci[freight]"]');
+          insuranceInput = document.querySelector('input[name="ci[insurance]"]');
+          totalInput = document.querySelector('input[name="ci[total]"]');
+        }
+
+        if (subtotalInput) {
+          subtotalInput.value = subtotal.toFixed(2);
+        }
+
+        const freight = parseFloat(freightInput?.value) || 0;
+        const insurance = parseFloat(insuranceInput?.value) || 0;
+        const grandTotal = subtotal + freight + insurance;
+
+        if (totalInput) {
+          totalInput.value = grandTotal.toFixed(2);
+        }
+      }
+    }
     
-    const type = table.dataset.type;
-    if (type !== 'proforma' && type !== 'commercial') return;
-
-    let subtotal = 0;
-    table.querySelectorAll('tbody tr').forEach((row) => {
-      recalcRow(row);
-      subtotal += parseFloat(row.querySelector('.amount')?.value) || 0;
-    });
-
-    let subtotalInput, freightInput, insuranceInput, totalInput;
-    if (type === 'proforma') {
-      subtotalInput = document.getElementById('pi_subtotal') || document.querySelector('input[name="pi[subtotal]"]');
-      freightInput = document.querySelector('input[name="pi[freight]"]');
-      insuranceInput = document.querySelector('input[name="pi[insurance]"]');
-      totalInput = document.getElementById('pi_total') || document.querySelector('input[name="pi[total]"]');
-    } else if (type === 'commercial') {
-      subtotalInput = document.querySelector('input[name="ci[subtotal]"]');
-      freightInput = document.querySelector('input[name="ci[freight]"]');
-      insuranceInput = document.querySelector('input[name="ci[insurance]"]');
-      totalInput = document.querySelector('input[name="ci[total]"]');
-    }
-
-    if (subtotalInput) {
-      subtotalInput.value = subtotal.toFixed(2);
-    }
-
-    const freight = parseFloat(freightInput?.value) || 0;
-    const insurance = parseFloat(insuranceInput?.value) || 0;
-    const grandTotal = subtotal + freight + insurance;
-
-    if (totalInput) {
-      totalInput.value = grandTotal.toFixed(2);
-    }
+    // Calculate contract total value
+    recalcContract();
   }
 
   document.addEventListener('input', (e) => {
@@ -69,6 +85,10 @@
       recalcTotals();
     }
     if (e.target.matches('input[name$="[freight]"], input[name$="[insurance]"]')) {
+      recalcTotals();
+    }
+    // Contract form inputs
+    if (e.target.matches('input[name="ec[quantity]"], input[name="ec[unit_price]"]')) {
       recalcTotals();
     }
   });
