@@ -5,15 +5,10 @@ declare(strict_types=1);
 date_default_timezone_set('Asia/Karachi');
 
 $autoload = dirname(__DIR__) . '/vendor/autoload.php';
-if (!is_file($autoload)) {
-    if (php_sapi_name() === 'cli') {
-        fwrite(STDERR, "Run: composer install\n");
-        exit(1);
-    }
-    http_response_code(500);
-    die('<h1>Setup required</h1><p>Run <code>composer install</code> in the project folder, then open <a href="install.php">install.php</a>.</p>');
+if (is_file($autoload)) {
+    require_once $autoload;
 }
-require_once $autoload;
+
 require_once __DIR__ . '/env.php';
 require_once __DIR__ . '/configure.php';
 require_once __DIR__ . '/helpers.php';
@@ -37,7 +32,7 @@ try {
     App\SchemaMigrator::run();
 } catch (Throwable $e) {
     error_log('SchemaMigrator: ' . $e->getMessage());
-    if (app_is_debug()) {
+    if (function_exists('app_is_debug') && app_is_debug()) {
         throw $e;
     }
 }
