@@ -15,7 +15,32 @@ class PdfGenerator
                 ob_end_clean();
             }
             header('Content-Type: text/html; charset=utf-8');
-            echo self::wrapHtml($html);
+            ?><!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title><?= htmlspecialchars($filename) ?></title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .notice { background: #fff3cd; border: 1px solid #ffecb5; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        .actions { margin-bottom: 20px; }
+        button { background: #0d6efd; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0b5ed7; }
+    </style>
+</head>
+<body>
+    <div class="notice">
+        <strong>Note:</strong> PDF generation is not available because the <code>dompdf</code> library is not installed. You can still view and print the document below.
+    </div>
+    <div class="actions">
+        <button onclick="window.print()">📄 Print Document</button>
+    </div>
+    <hr>
+    <div class="document-content">
+        <?= self::wrapHtml($html) ?>
+    </div>
+</body>
+</html><?php
             exit;
         }
         
