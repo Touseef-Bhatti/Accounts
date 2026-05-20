@@ -7,11 +7,50 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/includes/bootstrap.php';
+function loadEnvStandalone(string $path): void
+{
+    if (!is_file($path)) {
+        return;
+    }
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        return;
+    }
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
+        }
+        if (!str_contains($line, '=')) {
+            continue;
+        }
+        [$key, $value] = explode('=', $line, 2);
+        $key = trim($key);
+        $value = trim($value, " \t\"'");
+        if ($key !== '' && getenv($key) === false) {
+            putenv("{$key}={$value}");
+            $_ENV[$key] = $value;
+        }
+    }
+}
 
-if (env('APP_ENV') === 'production' && !filter_var(env('APP_ALLOW_INSTALL', false), FILTER_VALIDATE_BOOLEAN)) {
+function envStandalone(string $key, mixed $default = null): mixed
+{
+    $v = $_ENV[$key] ?? getenv($key);
+    if ($v === false || $v === null || $v === '') {
+        return $default;
+    }
+    return $v;
+}
+
+loadEnvStandalone(__DIR__ . '/.env');
+
+$appEnv = envStandalone('APP_ENV', 'local');
+$appAllowInstall = filter_var(envStandalone('APP_ALLOW_INSTALL', true), FILTER_VALIDATE_BOOLEAN);
+
+if ($appEnv === 'production' && !$appAllowInstall) {
     http_response_code(403);
-    die('Installer is disabled in production. Schema updates run automatically on each request.');
+    die('Installer is disabled in production.');
 }
 
 header('Content-Type: text/html; charset=utf-8');
@@ -19,7 +58,7 @@ header('Content-Type: text/html; charset=utf-8');
 $messages = [];
 $errors = [];
 
-function runSql(PDO $pdo, string $sql, string $label): void
+function runSqlStandalone(PDO $pdo, string $sql, string $label): void
 {
     global $messages, $errors;
     try {
@@ -30,16 +69,34 @@ function runSql(PDO $pdo, string $sql, string $label): void
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' || php_sapi_name() === 'cli') {
+function connectDbStandalone(): ?PDO
+{
+    $host = (string) envStandalone('DB_HOST', 'localhost');
+    $port = (string) envStandalone('DB_PORT', '3306');
+    $name = (string) envStandalone('DB_NAME', 'bhatti_accounts');
+    $user = (string) envStandalone('DB_USER', 'root');
+    $pass = (string) envStandalone('DB_PASS', '');
+
     try {
-        $pdo = App\Database::connection();
-    } catch (Throwable $e) {
+        $dsn = "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4";
+        $pdo = new PDO($dsn, $user, $pass, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
+        $pdo->exec("SET time_zone = '+05:00'");
+        return $pdo;
+    } catch (PDOException $e) {
+        global $errors;
         $errors[] = 'Database connection failed: ' . $e->getMessage();
-        $pdo = null;
+        return null;
     }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' || php_sapi_name() === 'cli') {
+    $pdo = connectDbStandalone();
 
     if ($pdo) {
-        runSql($pdo, <<<'SQL'
+        runSqlStandalone($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS accounts (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     slug VARCHAR(64) NOT NULL UNIQUE,
@@ -64,7 +121,7 @@ CREATE TABLE IF NOT EXISTS accounts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'accounts');
 
-        runSql($pdo, <<<'SQL'
+        runSqlStandalone($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS authorized_emails (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -75,7 +132,7 @@ CREATE TABLE IF NOT EXISTS authorized_emails (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'authorized_emails');
 
-        runSql($pdo, <<<'SQL'
+        runSqlStandalone($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS otp_codes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
@@ -89,7 +146,7 @@ CREATE TABLE IF NOT EXISTS otp_codes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'otp_codes');
 
-        runSql($pdo, <<<'SQL'
+        runSqlStandalone($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS login_attempts (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
@@ -101,7 +158,7 @@ CREATE TABLE IF NOT EXISTS login_attempts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'login_attempts');
 
-        runSql($pdo, <<<'SQL'
+        runSqlStandalone($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS document_sets (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     account_id INT UNSIGNED NOT NULL,
@@ -116,7 +173,7 @@ CREATE TABLE IF NOT EXISTS document_sets (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'document_sets');
 
-        runSql($pdo, <<<'SQL'
+        runSqlStandalone($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS proforma_invoices (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     document_set_id INT UNSIGNED NOT NULL UNIQUE,
@@ -148,7 +205,7 @@ CREATE TABLE IF NOT EXISTS proforma_invoices (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'proforma_invoices');
 
-        runSql($pdo, <<<'SQL'
+        runSqlStandalone($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS commercial_invoices (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     document_set_id INT UNSIGNED NOT NULL UNIQUE,
@@ -183,7 +240,7 @@ CREATE TABLE IF NOT EXISTS commercial_invoices (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'commercial_invoices');
 
-        runSql($pdo, <<<'SQL'
+        runSqlStandalone($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS packing_lists (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     document_set_id INT UNSIGNED NOT NULL UNIQUE,
@@ -208,7 +265,7 @@ CREATE TABLE IF NOT EXISTS packing_lists (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'packing_lists');
 
-        runSql($pdo, <<<'SQL'
+        runSqlStandalone($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS export_contracts (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     document_set_id INT UNSIGNED NOT NULL UNIQUE,
@@ -237,7 +294,7 @@ CREATE TABLE IF NOT EXISTS export_contracts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'export_contracts');
 
-        runSql($pdo, <<<'SQL'
+        runSqlStandalone($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS line_items (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     document_set_id INT UNSIGNED NOT NULL,
@@ -259,7 +316,7 @@ CREATE TABLE IF NOT EXISTS line_items (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'line_items');
 
-        runSql($pdo, <<<'SQL'
+        runSqlStandalone($pdo, <<<'SQL'
 CREATE TABLE IF NOT EXISTS gate_passes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     document_set_id INT UNSIGNED NOT NULL UNIQUE,
@@ -277,43 +334,60 @@ CREATE TABLE IF NOT EXISTS gate_passes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'gate_passes');
 
-        // Migrations for existing installations (same logic as App\SchemaMigrator)
-        try {
-            App\SchemaMigrator::run();
-            $messages[] = 'OK: Schema migrations applied (doc_type, gate_passes, line_items)';
-        } catch (Throwable $e) {
-            $errors[] = 'Schema migration: ' . $e->getMessage();
+        function columnExistsStandalone(PDO $pdo, string $table, string $column): bool
+        {
+            $stmt = $pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $stmt->execute([$table, $column]);
+            return (bool) $stmt->fetchColumn();
         }
 
-        runSql($pdo, 'DROP TABLE IF EXISTS field_suggestions', 'drop field_suggestions');
-
-        $suggestionFields = [
-            'pi_invoice_no', 'ci_invoice_no', 'contract_no', 'lc_no', 'exporter_name', 
-            'exporter_address', 'buyer_name', 'buyer_address', 'consignee_name', 
-            'consignee_address', 'notify_party', 'country_origin', 'country_destination', 
-            'port_loading', 'port_discharge', 'vessel_flight', 'bl_awb_no', 'incoterms', 
-            'payment_terms', 'shipping_marks', 'bank_details', 'remarks', 'invoice_ref', 
-            'container_no', 'seal_no', 'seller_name', 'seller_address', 'product_description', 
-            'shipment_period', 'governing_law', 'inspection_terms', 'force_majeure', 
-            'arbitration', 'special_conditions', 'cargo_description', 'vehicle_no', 
-            'driver_name', 'driver_nic', 'driver_mobile', 'authorization_note', 
-            'line_description', 'line_hs_code', 'line_remarks'
-        ];
-
-        foreach ($suggestionFields as $field) {
-            $tableName = 'suggest_' . $field;
-            runSql($pdo, "CREATE TABLE IF NOT EXISTS {$tableName} (
-                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                account_id INT UNSIGNED NOT NULL,
-                field_value TEXT NOT NULL,
-                use_count INT UNSIGNED DEFAULT 1,
-                last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                UNIQUE KEY uk_suggestion (account_id, field_value(191)),
-                FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", "table: {$tableName}");
+        function tableExistsStandalone(PDO $pdo, string $table): bool
+        {
+            $stmt = $pdo->prepare(
+                'SELECT 1 FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+            );
+            $stmt->execute([$table]);
+            return (bool) $stmt->fetchColumn();
         }
 
-        // Seed accounts
+        if (tableExistsStandalone($pdo, 'document_sets') && !columnExistsStandalone($pdo, 'document_sets', 'doc_type')) {
+            $pdo->exec(
+                "ALTER TABLE document_sets ADD COLUMN doc_type
+                 ENUM('proforma','commercial','packing','contract','gate_pass')
+                 NOT NULL DEFAULT 'proforma' AFTER reference_no"
+            );
+            $messages[] = 'OK: Added doc_type to document_sets';
+        }
+
+        if (tableExistsStandalone($pdo, 'line_items')) {
+            if (!columnExistsStandalone($pdo, 'line_items', 'remarks')) {
+                $pdo->exec('ALTER TABLE line_items ADD COLUMN remarks TEXT DEFAULT NULL AFTER dimensions');
+                $messages[] = 'OK: Added remarks to line_items';
+            }
+            try {
+                $pdo->exec(
+                    "ALTER TABLE line_items MODIFY COLUMN doc_type
+                     ENUM('proforma','commercial','packing','gate_pass') NOT NULL"
+                );
+            } catch (PDOException) {
+            }
+        }
+
+        if (tableExistsStandalone($pdo, 'authorized_emails')) {
+            if (!columnExistsStandalone($pdo, 'authorized_emails', 'name')) {
+                $pdo->exec('ALTER TABLE authorized_emails ADD COLUMN name VARCHAR(255) DEFAULT NULL AFTER email');
+                $messages[] = 'OK: Added name to authorized_emails';
+            }
+            if (!columnExistsStandalone($pdo, 'authorized_emails', 'password')) {
+                $pdo->exec('ALTER TABLE authorized_emails ADD COLUMN password VARCHAR(255) DEFAULT NULL AFTER name');
+                $messages[] = 'OK: Added password to authorized_emails';
+            }
+        }
+
         $stmt = $pdo->query("SELECT COUNT(*) FROM accounts");
         if ((int) $stmt->fetchColumn() === 0) {
             $pdo->exec(<<<'SQL'
@@ -324,8 +398,7 @@ SQL);
             $messages[] = 'OK: Seeded Bhatti Trader and Bhatti Chemicals Industry accounts';
         }
 
-        // Sync authorized emails from .env
-        $emails = array_filter(array_map('trim', explode(',', (string) env('AUTHORIZED_EMAILS', ''))));
+        $emails = array_filter(array_map('trim', explode(',', (string) envStandalone('AUTHORIZED_EMAILS', ''))));
         foreach ($emails as $email) {
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 continue;
