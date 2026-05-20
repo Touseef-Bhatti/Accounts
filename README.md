@@ -90,3 +90,4 @@ api/suggestions.php  # Autocomplete API
 ## Customizing PDF templates
 
 Edit files in `templates/` (`proforma_pdf.php`, `commercial_pdf.php`, etc.) to match your exact letterhead layout. Upload logos via **Settings**.
+

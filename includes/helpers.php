@@ -89,5 +89,20 @@ function format_date(?string $date): string
         return '';
     }
     $ts = strtotime($date);
-    return $ts ? date('d-M-Y', $ts) : $date;
+    return $ts ? date('d-m-Y', $ts) : $date;
 }
+
+function parse_date_input(?string $date): ?string
+{
+    if (!$date || trim($date) === '') {
+        return null;
+    }
+    $trimmed = trim($date);
+    // Check if format is DD-MM-YYYY
+    if (preg_match('/^(\d{1,2})-(\d{1,2})-(\d{4})$/', $trimmed, $matches)) {
+        return sprintf('%04d-%02d-%02d', (int)$matches[3], (int)$matches[2], (int)$matches[1]);
+    }
+    $ts = strtotime($trimmed);
+    return $ts ? date('Y-m-d', $ts) : null;
+}
+

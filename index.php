@@ -61,10 +61,6 @@ layout_header('Select Company');
             <?php endforeach; ?>
             <?php if (!$accounts): ?>
                 <div class="col-12"><div class="alert alert-warning">No accounts found. <a href="install.php">Run installation</a>.</div></div>
-            <?php else: ?>
-            <div class="col-12 text-center">
-                <button type="submit" class="btn btn-primary btn-lg px-5">Continue → Create Documents</button>
-            </div>
             <?php endif; ?>
         </form>
         <?php if (!empty($_SESSION['account_id'])): ?>
@@ -79,7 +75,12 @@ document.querySelectorAll('.account-card').forEach(card => {
     card.addEventListener('click', () => {
         document.querySelectorAll('.account-card').forEach(c => c.classList.remove('border-primary'));
         card.classList.add('border-primary');
-        card.querySelector('.account-radio').checked = true;
+        const radio = card.querySelector('.account-radio');
+        if (radio) {
+            radio.checked = true;
+            // Submit the form immediately upon selection
+            card.closest('form').submit();
+        }
     });
 });
 </script>

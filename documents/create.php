@@ -96,7 +96,7 @@ if ($data) {
 
     $exporter = $account['legal_name'] ?: $account['name'];
 
-    $expAddr = trim(($account['address'] ?? '') . "\n" . ($account['city'] ?? '') . ', ' . ($account['country'] ?? 'Pakistan'));
+    $expAddr = 'Gala Gema Pamp wala, Sheikhupura Rd, near bilal Ganj market, Gujranwala , Pakistan';
 
     $ref = 'EXP-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
 
@@ -121,6 +121,8 @@ if ($data) {
         'country_origin' => 'Pakistan',
 
         'incoterms' => 'CFR',
+
+        'port_loading' => 'Karachi',
 
         'invoice_date' => $today,
 
@@ -156,6 +158,8 @@ if ($data) {
 
         'incoterms' => 'CFR',
 
+        'port_loading' => 'Karachi',
+
         'currency' => $prefill['currency'],
 
         'payment_terms' => $prefill['payment_terms'],
@@ -174,6 +178,8 @@ if ($data) {
 
         'exporter_address' => $expAddr,
 
+        'port_loading' => 'Karachi',
+
         'currency' => $prefill['currency'],
 
         'bank_details' => $bankBlock,
@@ -188,6 +194,8 @@ if ($data) {
 
         'exporter_name' => $exporter,
 
+        'exporter_address' => $expAddr,
+
         'invoice_ref' => $ref,
 
     ];
@@ -201,6 +209,8 @@ if ($data) {
         'seller_name' => $exporter,
 
         'seller_address' => $expAddr,
+
+        'port_loading' => 'Karachi',
 
         'currency' => $prefill['currency'],
 

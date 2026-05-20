@@ -4,9 +4,9 @@
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-4"><label class="form-label">Contract No.</label>
-                <input name="ec[contract_no]" class="form-control" value="<?= e(v($ct,'contract_no')) ?>"></div>
+                <input name="ec[contract_no]" class="form-control suggest" data-field="contract_no" value="<?= e(v($ct,'contract_no')) ?>" required></div>
             <div class="col-md-4"><label class="form-label">Contract Date</label>
-                <input type="date" name="ec[contract_date]" class="form-control" value="<?= e(v($ct,'contract_date', date('Y-m-d'))) ?>"></div>
+                <input type="text" name="ec[contract_date]" class="form-control date-picker" placeholder="DD-MM-YYYY" value="<?= e(format_date(v($ct,'contract_date', date('Y-m-d')))) ?>" required></div>
             <div class="col-md-4"><label class="form-label">Currency</label>
                 <select name="ec[currency]" class="form-select">
                     <?php foreach (['USD','EUR','GBP','PKR'] as $cur): ?>
@@ -14,15 +14,15 @@
                     <?php endforeach; ?>
                 </select></div>
             <div class="col-md-6"><label class="form-label">Seller</label>
-                <input name="ec[seller_name]" class="form-control" value="<?= e(v($ct,'seller_name')) ?>"></div>
+                <input name="ec[seller_name]" class="form-control suggest" data-field="seller_name" value="<?= e(v($ct,'seller_name')) ?>" required></div>
             <div class="col-md-6"><label class="form-label">Buyer</label>
-                <input name="ec[buyer_name]" class="form-control suggest" data-field="buyer_name" value="<?= e(v($ct,'buyer_name')) ?>"></div>
+                <input name="ec[buyer_name]" class="form-control suggest" data-field="buyer_name" value="<?= e(v($ct,'buyer_name')) ?>" required></div>
             <div class="col-md-6"><label class="form-label">Seller Address</label>
                 <textarea name="ec[seller_address]" class="form-control" rows="2"><?= e(v($ct,'seller_address')) ?></textarea></div>
             <div class="col-md-6"><label class="form-label">Buyer Address</label>
                 <textarea name="ec[buyer_address]" class="form-control" rows="2"><?= e(v($ct,'buyer_address')) ?></textarea></div>
             <div class="col-12"><label class="form-label">Product Description</label>
-                <textarea name="ec[product_description]" class="form-control" rows="3"><?= e(v($ct,'product_description')) ?></textarea></div>
+                <textarea name="ec[product_description]" class="form-control suggest" data-field="product_description" rows="3"><?= e(v($ct,'product_description')) ?></textarea></div>
             <div class="col-md-4"><label class="form-label">Quantity</label>
                 <input name="ec[quantity]" class="form-control" value="<?= e(v($ct,'quantity')) ?>"></div>
             <div class="col-md-4"><label class="form-label">Unit Price</label>
@@ -30,11 +30,11 @@
             <div class="col-md-4"><label class="form-label">Total Value</label>
                 <input name="ec[total_value]" class="form-control" value="<?= e(v($ct,'total_value')) ?>"></div>
             <div class="col-md-6"><label class="form-label">Delivery Terms</label>
-                <textarea name="ec[delivery_terms]" class="form-control" rows="2"><?= e(v($ct,'delivery_terms', v($prefill,'delivery_terms',''))) ?></textarea></div>
+                <textarea name="ec[delivery_terms]" class="form-control suggest" data-field="delivery_terms" rows="2"><?= e(v($ct,'delivery_terms', v($prefill,'delivery_terms','CFR'))) ?></textarea></div>
             <div class="col-md-6"><label class="form-label">Payment Terms</label>
-                <textarea name="ec[payment_terms]" class="form-control" rows="2"><?= e(v($ct,'payment_terms', v($prefill,'payment_terms',''))) ?></textarea></div>
+                <textarea name="ec[payment_terms]" class="form-control suggest" data-field="payment_terms" rows="2"><?= e(v($ct,'payment_terms', v($prefill,'payment_terms','100% irrevocable L/C at sight'))) ?></textarea></div>
             <div class="col-md-6"><label class="form-label">Port of Loading</label>
-                <input name="ec[port_loading]" class="form-control" value="<?= e(v($ct,'port_loading')) ?>"></div>
+                <input name="ec[port_loading]" class="form-control" value="<?= e(v($ct,'port_loading','Karachi')) ?>"></div>
             <div class="col-md-6"><label class="form-label">Port of Discharge</label>
                 <input name="ec[port_discharge]" class="form-control" value="<?= e(v($ct,'port_discharge')) ?>"></div>
             <div class="col-md-6"><label class="form-label">Shipment Period</label>

@@ -6,21 +6,21 @@
             <div class="col-md-4"><label class="form-label">Packing List No.</label>
                 <input name="pl[packing_list_no]" class="form-control" value="<?= e(v($pk,'packing_list_no')) ?>"></div>
             <div class="col-md-4"><label class="form-label">Date</label>
-                <input type="date" name="pl[packing_date]" class="form-control" value="<?= e(v($pk,'packing_date', date('Y-m-d'))) ?>"></div>
+                <input type="text" name="pl[packing_date]" class="form-control date-picker" placeholder="DD-MM-YYYY" value="<?= e(format_date(v($pk,'packing_date', date('Y-m-d')))) ?>"></div>
             <div class="col-md-4"><label class="form-label">Invoice Ref</label>
                 <input name="pl[invoice_ref]" class="form-control" value="<?= e(v($pk,'invoice_ref')) ?>"></div>
             <div class="col-md-6"><label class="form-label">Exporter</label>
-                <input name="pl[exporter_name]" class="form-control" value="<?= e(v($pk,'exporter_name')) ?>"></div>
+                <input name="pl[exporter_name]" class="form-control suggest" data-field="exporter_name" value="<?= e(v($pk,'exporter_name')) ?>"></div>
             <div class="col-md-6"><label class="form-label">Buyer</label>
-                <input name="pl[buyer_name]" class="form-control" value="<?= e(v($pk,'buyer_name')) ?>"></div>
+                <input name="pl[buyer_name]" class="form-control suggest" data-field="buyer_name" value="<?= e(v($pk,'buyer_name')) ?>"></div>
             <div class="col-md-6"><label class="form-label">Exporter Address</label>
-                <textarea name="pl[exporter_address]" class="form-control" rows="2"><?= e(v($pk,'exporter_address')) ?></textarea></div>
+                <textarea name="pl[exporter_address]" class="form-control suggest" data-field="exporter_address" rows="2"><?= e(v($pk,'exporter_address')) ?></textarea></div>
             <div class="col-md-6"><label class="form-label">Buyer Address</label>
-                <textarea name="pl[buyer_address]" class="form-control" rows="2"><?= e(v($pk,'buyer_address')) ?></textarea></div>
+                <textarea name="pl[buyer_address]" class="form-control suggest" data-field="buyer_address" rows="2"><?= e(v($pk,'buyer_address')) ?></textarea></div>
             <div class="col-md-6"><label class="form-label">Consignee</label>
-                <input name="pl[consignee_name]" class="form-control" value="<?= e(v($pk,'consignee_name')) ?>"></div>
+                <input name="pl[consignee_name]" class="form-control suggest" data-field="consignee_name" value="<?= e(v($pk,'consignee_name')) ?>"></div>
             <div class="col-md-6"><label class="form-label">Consignee Address</label>
-                <textarea name="pl[consignee_address]" class="form-control" rows="2"><?= e(v($pk,'consignee_address')) ?></textarea></div>
+                <textarea name="pl[consignee_address]" class="form-control suggest" data-field="consignee_address" rows="2"><?= e(v($pk,'consignee_address')) ?></textarea></div>
             <div class="col-md-4"><label class="form-label">Container No.</label>
                 <input name="pl[container_no]" class="form-control suggest" data-field="container_no" value="<?= e(v($pk,'container_no')) ?>"></div>
             <div class="col-md-4"><label class="form-label">Seal No.</label>
@@ -37,7 +37,7 @@
                 <tbody>
                 <?php foreach ($linesPk as $row): ?>
                 <tr>
-                    <td><input name="lines_packing[][description]" class="form-control form-control-sm" value="<?= e($row['description'] ?? '') ?>"></td>
+                    <td><input name="lines_packing[][description]" class="form-control form-control-sm suggest" data-field="line_description" value="<?= e($row['description'] ?? '') ?>"></td>
                     <td><input name="lines_packing[][packages]" type="number" class="form-control form-control-sm" value="<?= e($row['packages'] ?? '') ?>"></td>
                     <td><input name="lines_packing[][gross_kg]" type="number" step="0.001" class="form-control form-control-sm" value="<?= e($row['gross_kg'] ?? '') ?>"></td>
                     <td><input name="lines_packing[][net_kg]" type="number" step="0.001" class="form-control form-control-sm" value="<?= e($row['net_kg'] ?? '') ?>"></td>

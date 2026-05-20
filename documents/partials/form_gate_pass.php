@@ -20,7 +20,7 @@
 
                 <label class="form-label">Date</label>
 
-                <input type="date" name="gp[gate_pass_date]" class="form-control" value="<?= e(v($gp,'gate_pass_date', date('Y-m-d'))) ?>" required>
+                <input type="text" name="gp[gate_pass_date]" class="form-control date-picker" placeholder="DD-MM-YYYY" value="<?= e(format_date(v($gp,'gate_pass_date', date('Y-m-d')))) ?>" required>
 
             </div>
 
@@ -52,7 +52,7 @@
 
                 <label class="form-label">Vehicle No.</label>
 
-                <input name="gp[vehicle_no]" class="form-control" value="<?= e(v($gp,'vehicle_no')) ?>">
+                <input name="gp[vehicle_no]" class="form-control suggest" data-field="vehicle_no" value="<?= e(v($gp,'vehicle_no')) ?>">
 
             </div>
 
@@ -60,7 +60,7 @@
 
                 <label class="form-label">Driver Name</label>
 
-                <input name="gp[driver_name]" class="form-control" value="<?= e(v($gp,'driver_name')) ?>">
+                <input name="gp[driver_name]" class="form-control suggest" data-field="driver_name" value="<?= e(v($gp,'driver_name')) ?>">
 
             </div>
 
@@ -68,7 +68,7 @@
 
                 <label class="form-label">Driver NIC</label>
 
-                <input name="gp[driver_nic]" class="form-control" value="<?= e(v($gp,'driver_nic')) ?>">
+                <input name="gp[driver_nic]" class="form-control suggest" data-field="driver_nic" value="<?= e(v($gp,'driver_nic')) ?>">
 
             </div>
 
@@ -76,7 +76,7 @@
 
                 <label class="form-label">Driver Mobile</label>
 
-                <input name="gp[driver_mobile]" class="form-control" value="<?= e(v($gp,'driver_mobile')) ?>">
+                <input name="gp[driver_mobile]" class="form-control suggest" data-field="driver_mobile" value="<?= e(v($gp,'driver_mobile')) ?>">
 
             </div>
 
@@ -106,13 +106,18 @@
 
                 <tr>
 
-                    <td><input name="lines_gate_pass[][description]" class="form-control form-control-sm" value="<?= e($row['description'] ?? '') ?>"></td>
+                    <td><input name="lines_gate_pass[][description]" class="form-control form-control-sm suggest" data-field="line_description" value="<?= e($row['description'] ?? '') ?>"></td>
 
                     <td><input name="lines_gate_pass[][quantity]" type="number" step="0.001" class="form-control form-control-sm" value="<?= e($row['quantity'] ?? '') ?>"></td>
 
-                    <td><input name="lines_gate_pass[][unit]" class="form-control form-control-sm" value="<?= e($row['unit'] ?? 'KG') ?>"></td>
+                    <td>
+                        <select name="lines_gate_pass[][unit]" class="form-select form-select-sm">
+                            <option value="KG" <?= ($row['unit'] ?? 'KG') === 'KG' ? 'selected' : '' ?>>KG</option>
+                            <option value="MT" <?= ($row['unit'] ?? 'KG') === 'MT' ? 'selected' : '' ?>>MT</option>
+                        </select>
+                    </td>
 
-                    <td><input name="lines_gate_pass[][remarks]" class="form-control form-control-sm" value="<?= e($row['remarks'] ?? '') ?>"></td>
+                    <td><input name="lines_gate_pass[][remarks]" class="form-control form-control-sm suggest" data-field="line_remarks" value="<?= e($row['remarks'] ?? '') ?>"></td>
 
                     <td><button type="button" class="btn btn-sm btn-outline-danger rm-row">×</button></td>
 

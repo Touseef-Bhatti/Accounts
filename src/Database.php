@@ -32,6 +32,7 @@ class Database
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             ]);
+            $pdo->exec("SET time_zone = '+05:00'");
         } catch (PDOException $e) {
             throw new PDOException('Database connection failed: ' . $e->getMessage(), (int) $e->getCode(), $e);
         }

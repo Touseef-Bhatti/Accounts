@@ -79,7 +79,6 @@ try {
     $setId = DocumentRepository::resolveSetId($accountId, $referenceNo, $setId, $email, $docType);
 
 
-
     [$doc, $lines, $valid] = collectDocumentPayload($docType, $_POST);
 
     if (!$valid['ok']) {
@@ -90,14 +89,9 @@ try {
 
     }
 
-
-
     DocumentRepository::saveForType($setId, $docType, normalizeDoc($doc), $lines);
 
-    recordSuggestions($accountId, $docType, $doc);
-
-
-
+    recordSuggestions($accountId, $docType, $doc, $lines);
     if ($action === 'review') {
 
         DocumentRepository::markCompleted($setId);
@@ -145,10 +139,28 @@ try {
 
 
 
+function groupLineItems(array $items): array
+{
+    $grouped = [];
+    $currentRow = [];
+    foreach ($items as $item) {
+        foreach ($item as $key => $value) {
+            if (!empty($currentRow) && array_key_exists($key, $currentRow)) {
+                $grouped[] = $currentRow;
+                $currentRow = [];
+            }
+            $currentRow[$key] = $value;
+        }
+    }
+    if (!empty($currentRow)) {
+        $grouped[] = $currentRow;
+    }
+    return $grouped;
+}
+
 /** @return array{0: array, 1: array, 2: array{ok: bool, message: string}} */
 
 function collectDocumentPayload(string $docType, array $post): array
-
 {
 
     return match ($docType) {
@@ -172,12 +184,11 @@ function collectDocumentPayload(string $docType, array $post): array
 
 
 function collectProforma(array $post): array
-
 {
 
     $doc = $post['pi'] ?? [];
-
-    $lines = $post['lines_proforma'] ?? [];
+    $rawLines = $post['lines_proforma'] ?? [];
+    $lines = groupLineItems($rawLines);
 
     if (trim($doc['invoice_no'] ?? '') === '' || trim($doc['buyer_name'] ?? '') === '') {
 
@@ -190,14 +201,12 @@ function collectProforma(array $post): array
 }
 
 
-
 function collectCommercial(array $post): array
-
 {
 
     $doc = $post['ci'] ?? [];
-
-    $lines = $post['lines_commercial'] ?? [];
+    $rawLines = $post['lines_commercial'] ?? [];
+    $lines = groupLineItems($rawLines);
 
     if (trim($doc['invoice_no'] ?? '') === '' || trim($doc['buyer_name'] ?? '') === '') {
 
@@ -210,14 +219,12 @@ function collectCommercial(array $post): array
 }
 
 
-
 function collectPacking(array $post): array
-
 {
 
     $doc = $post['pl'] ?? [];
-
-    $lines = $post['lines_packing'] ?? [];
+    $rawLines = $post['lines_packing'] ?? [];
+    $lines = groupLineItems($rawLines);
 
     if (trim($doc['packing_list_no'] ?? '') === '' || trim($doc['exporter_name'] ?? '') === '') {
 
@@ -230,9 +237,7 @@ function collectPacking(array $post): array
 }
 
 
-
 function collectContract(array $post): array
-
 {
 
     $doc = $post['ec'] ?? [];
@@ -248,14 +253,12 @@ function collectContract(array $post): array
 }
 
 
-
 function collectGatePass(array $post): array
-
 {
 
     $doc = $post['gp'] ?? [];
-
-    $lines = $post['lines_gate_pass'] ?? [];
+    $rawLines = $post['lines_gate_pass'] ?? [];
+    $lines = groupLineItems($rawLines);
 
     if (trim($doc['gate_pass_no'] ?? '') === '') {
 
@@ -284,13 +287,9 @@ function normalizeDoc(array $d): array
     }
 
     foreach (['invoice_date', 'validity_date', 'lc_date', 'packing_date', 'contract_date', 'gate_pass_date'] as $dt) {
-
-        if (isset($d[$dt]) && $d[$dt] === '') {
-
-            $d[$dt] = null;
-
+        if (isset($d[$dt])) {
+            $d[$dt] = parse_date_input($d[$dt]);
         }
-
     }
 
     return $d;
@@ -299,75 +298,46 @@ function normalizeDoc(array $d): array
 
 
 
-function recordSuggestions(int $accountId, string $docType, array $doc): void
+function recordSuggestions(int $accountId, string $docType, array $doc, array $lines = []): void
 
 {
 
-    $map = match ($docType) {
+    // Exclude noise, dates, numbers, IDs, and fields with high unique random values
+    $exclude = [
+        'id', 'document_set_id', 'invoice_date', 'validity_date', 'lc_date', 
+        'packing_date', 'contract_date', 'gate_pass_date', 'created_at', 'updated_at',
+        'reference_no', 'invoice_no', 'packing_list_no', 'contract_no', 'gate_pass_no'
+    ];
 
-        'proforma' => [
+    // Map of specific doc fields to unified suggestion keys
+    $keyMap = [
+        'destination' => 'country_destination',
+        'delivery_terms' => 'incoterms',
+    ];
 
-            'exporter_name' => $doc['exporter_name'] ?? null,
+    // Record all fields in the main document payload dynamically
+    foreach ($doc as $key => $value) {
+        if (is_string($value) && trim($value) !== '') {
+            if (!in_array($key, $exclude, true)) {
+                $fieldKey = $keyMap[$key] ?? $key;
+                // If it is a generic field name (like matching across doc types), it will group suggestions beautifully!
+                SuggestionService::record($accountId, $fieldKey, $value);
+            }
+        }
+    }
 
-            'exporter_address' => $doc['exporter_address'] ?? null,
-
-            'buyer_name' => $doc['buyer_name'] ?? null,
-
-            'buyer_address' => $doc['buyer_address'] ?? null,
-
-            'consignee_name' => $doc['consignee_name'] ?? null,
-
-            'consignee_address' => $doc['consignee_address'] ?? null,
-
-            'notify_party' => $doc['notify_party'] ?? null,
-
-            'country_destination' => $doc['country_destination'] ?? null,
-
-            'port_loading' => $doc['port_loading'] ?? null,
-
-            'port_discharge' => $doc['port_discharge'] ?? null,
-
-            'payment_terms' => $doc['payment_terms'] ?? null,
-
-            'pi_invoice_no' => $doc['invoice_no'] ?? null,
-
-        ],
-
-        'commercial' => [
-
-            'exporter_name' => $doc['exporter_name'] ?? null,
-
-            'buyer_name' => $doc['buyer_name'] ?? null,
-
-            'ci_invoice_no' => $doc['invoice_no'] ?? null,
-
-            'lc_no' => $doc['lc_no'] ?? null,
-
-        ],
-
-        'packing' => [
-
-            'container_no' => $doc['container_no'] ?? null,
-
-        ],
-
-        'gate_pass' => [
-
-            'container_no' => $doc['container_no'] ?? null,
-
-            'country_destination' => $doc['destination'] ?? null,
-
-        ],
-
-        default => [
-
-            'buyer_name' => $doc['buyer_name'] ?? null,
-
-        ],
-
-    };
-
-    SuggestionService::recordMany($accountId, $map);
+    // Record line item descriptions, HS codes, and remarks dynamically
+    foreach ($lines as $line) {
+        if (is_array($line)) {
+            foreach ($line as $col => $val) {
+                if (is_string($val) && trim($val) !== '') {
+                    if (in_array($col, ['description', 'hs_code', 'remarks'], true)) {
+                        SuggestionService::record($accountId, 'line_' . $col, $val);
+                    }
+                }
+            }
+        }
+    }
 
 }
 

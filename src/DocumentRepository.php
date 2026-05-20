@@ -683,7 +683,6 @@ class DocumentRepository
 
 
     public static function saveLineItems(int $setId, string $docType, array $items): void
-
     {
 
         $pdo = Database::connection();
@@ -693,9 +692,7 @@ class DocumentRepository
             ->execute([$setId, $docType]);
 
 
-
         $hasRemarks = self::lineItemsHaveRemarksColumn($pdo);
-
 
 
         if ($hasRemarks) {
@@ -729,7 +726,6 @@ class DocumentRepository
         }
 
 
-
         foreach ($items as $i => $item) {
 
             if (trim((string) ($item['description'] ?? '')) === '') {
@@ -738,13 +734,18 @@ class DocumentRepository
 
             }
 
+            // Normalize numeric fields (like quantity, unit_price, amount)
+            $quantity = isset($item['quantity']) ? (float) str_replace(',', '', (string) $item['quantity']) : 0;
+            $unitPrice = isset($item['unit_price']) ? (float) str_replace(',', '', (string) $item['unit_price']) : 0;
+            $amount = isset($item['amount']) ? (float) str_replace(',', '', (string) $item['amount']) : 0;
+            
             $params = [
 
                 $setId, $docType, $i,
 
                 $item['description'], $item['hs_code'] ?? null,
 
-                $item['quantity'] ?? 0, $item['unit'] ?? 'MT', $item['unit_price'] ?? 0, $item['amount'] ?? 0,
+                $quantity, $item['unit'] ?? 'MT', $unitPrice, $amount,
 
                 $item['packages'] ?? null, $item['gross_kg'] ?? null, $item['net_kg'] ?? null,
 

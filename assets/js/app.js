@@ -1,6 +1,14 @@
 (function () {
   'use strict';
 
+  // Initialize Flatpickr date pickers
+  if (typeof flatpickr !== 'undefined') {
+    flatpickr('.date-picker', {
+      dateFormat: 'd-m-Y',
+      allowInput: false
+    });
+  }
+
   // Line item calculations
   function recalcRow(row) {
     const qty = parseFloat(row.querySelector('.qty')?.value) || 0;
@@ -11,18 +19,42 @@
     }
   }
 
-  function recalcTable(table) {
-    let sub = 0;
+  function recalcTotals() {
+    const table = document.querySelector('.line-items');
+    if (!table) return;
+    
+    const type = table.dataset.type;
+    if (type !== 'proforma' && type !== 'commercial') return;
+
+    let subtotal = 0;
     table.querySelectorAll('tbody tr').forEach((row) => {
       recalcRow(row);
-      sub += parseFloat(row.querySelector('.amount')?.value) || 0;
+      subtotal += parseFloat(row.querySelector('.amount')?.value) || 0;
     });
-    const type = table.dataset.type;
+
+    let subtotalInput, freightInput, insuranceInput, totalInput;
     if (type === 'proforma') {
-      const el = document.getElementById('pi_subtotal');
-      const total = document.getElementById('pi_total');
-      if (el) el.value = sub.toFixed(2);
-      if (total) total.value = sub.toFixed(2);
+      subtotalInput = document.getElementById('pi_subtotal') || document.querySelector('input[name="pi[subtotal]"]');
+      freightInput = document.querySelector('input[name="pi[freight]"]');
+      insuranceInput = document.querySelector('input[name="pi[insurance]"]');
+      totalInput = document.getElementById('pi_total') || document.querySelector('input[name="pi[total]"]');
+    } else if (type === 'commercial') {
+      subtotalInput = document.querySelector('input[name="ci[subtotal]"]');
+      freightInput = document.querySelector('input[name="ci[freight]"]');
+      insuranceInput = document.querySelector('input[name="ci[insurance]"]');
+      totalInput = document.querySelector('input[name="ci[total]"]');
+    }
+
+    if (subtotalInput) {
+      subtotalInput.value = subtotal.toFixed(2);
+    }
+
+    const freight = parseFloat(freightInput?.value) || 0;
+    const insurance = parseFloat(insuranceInput?.value) || 0;
+    const grandTotal = subtotal + freight + insurance;
+
+    if (totalInput) {
+      totalInput.value = grandTotal.toFixed(2);
     }
   }
 
@@ -30,38 +62,50 @@
     if (e.target.matches('.qty, .price')) {
       const row = e.target.closest('tr');
       if (row) recalcRow(row);
+      recalcTotals();
     }
     if (e.target.matches('.amount')) {
       e.target.dataset.manual = '1';
+      recalcTotals();
+    }
+    if (e.target.matches('input[name$="[freight]"], input[name$="[insurance]"]')) {
+      recalcTotals();
     }
   });
 
   document.querySelectorAll('.line-items').forEach((table) => {
-    table.addEventListener('input', () => recalcTable(table));
+    table.addEventListener('input', () => recalcTotals());
   });
+
+  // Run on page load / ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', recalcTotals);
+  } else {
+    recalcTotals();
+  }
 
   // Add / remove rows
   const rowTemplates = {
     proforma: `<tr>
-      <td><input name="lines_proforma[][description]" class="form-control form-control-sm"></td>
-      <td><input name="lines_proforma[][hs_code]" class="form-control form-control-sm"></td>
+      <td><input name="lines_proforma[][description]" class="form-control form-control-sm suggest" data-field="line_description"></td>
+      <td><input name="lines_proforma[][hs_code]" class="form-control form-control-sm suggest" data-field="line_hs_code"></td>
       <td><input name="lines_proforma[][quantity]" type="number" step="0.001" class="form-control form-control-sm qty"></td>
-      <td><input name="lines_proforma[][unit]" class="form-control form-control-sm" value="MT"></td>
+      <td><select name="lines_proforma[][unit]" class="form-select form-select-sm"><option value="MT">MT</option><option value="KG">KG</option></select></td>
       <td><input name="lines_proforma[][unit_price]" type="number" step="0.0001" class="form-control form-control-sm price"></td>
       <td><input name="lines_proforma[][amount]" type="number" step="0.01" class="form-control form-control-sm amount"></td>
       <td><button type="button" class="btn btn-sm btn-outline-danger rm-row">×</button></td>
     </tr>`,
     commercial: `<tr>
-      <td><input name="lines_commercial[][description]" class="form-control form-control-sm"></td>
-      <td><input name="lines_commercial[][hs_code]" class="form-control form-control-sm"></td>
+      <td><input name="lines_commercial[][description]" class="form-control form-control-sm suggest" data-field="line_description"></td>
+      <td><input name="lines_commercial[][hs_code]" class="form-control form-control-sm suggest" data-field="line_hs_code"></td>
       <td><input name="lines_commercial[][quantity]" type="number" step="0.001" class="form-control form-control-sm qty"></td>
-      <td><input name="lines_commercial[][unit]" class="form-control form-control-sm" value="MT"></td>
+      <td><select name="lines_commercial[][unit]" class="form-select form-select-sm"><option value="MT">MT</option><option value="KG">KG</option></select></td>
       <td><input name="lines_commercial[][unit_price]" type="number" step="0.0001" class="form-control form-control-sm price"></td>
       <td><input name="lines_commercial[][amount]" type="number" step="0.01" class="form-control form-control-sm amount"></td>
       <td><button type="button" class="btn btn-sm btn-outline-danger rm-row">×</button></td>
     </tr>`,
     packing: `<tr>
-      <td><input name="lines_packing[][description]" class="form-control form-control-sm"></td>
+      <td><input name="lines_packing[][description]" class="form-control form-control-sm suggest" data-field="line_description"></td>
       <td><input name="lines_packing[][packages]" type="number" class="form-control form-control-sm"></td>
       <td><input name="lines_packing[][gross_kg]" type="number" step="0.001" class="form-control form-control-sm"></td>
       <td><input name="lines_packing[][net_kg]" type="number" step="0.001" class="form-control form-control-sm"></td>
@@ -69,10 +113,10 @@
       <td><button type="button" class="btn btn-sm btn-outline-danger rm-row">×</button></td>
     </tr>`,
     gate_pass: `<tr>
-      <td><input name="lines_gate_pass[][description]" class="form-control form-control-sm"></td>
+      <td><input name="lines_gate_pass[][description]" class="form-control form-control-sm suggest" data-field="line_description"></td>
       <td><input name="lines_gate_pass[][quantity]" type="number" step="0.001" class="form-control form-control-sm"></td>
-      <td><input name="lines_gate_pass[][unit]" class="form-control form-control-sm" value="KG"></td>
-      <td><input name="lines_gate_pass[][remarks]" class="form-control form-control-sm"></td>
+      <td><select name="lines_gate_pass[][unit]" class="form-select form-select-sm"><option value="KG">KG</option><option value="MT">MT</option></select></td>
+      <td><input name="lines_gate_pass[][remarks]" class="form-control form-control-sm suggest" data-field="line_remarks"></td>
       <td><button type="button" class="btn btn-sm btn-outline-danger rm-row">×</button></td>
     </tr>`,
   };
@@ -83,12 +127,19 @@
       const table = document.querySelector(`.line-items[data-type="${target}"] tbody`);
       if (table && rowTemplates[target]) {
         table.insertAdjacentHTML('beforeend', rowTemplates[target]);
+        recalcTotals();
+        if (typeof initSelect2 !== 'undefined') {
+          initSelect2();
+        }
       }
     }
     if (e.target.classList.contains('rm-row')) {
       const row = e.target.closest('tr');
       const tbody = row?.parentElement;
-      if (row && tbody && tbody.children.length > 1) row.remove();
+      if (row && tbody && tbody.children.length > 1) {
+        row.remove();
+        recalcTotals();
+      }
     }
   });
 
@@ -102,6 +153,21 @@
         }
       });
     });
+    
+    // Intercept Enter key inside inputs to trigger "Review & Download" instead of "Save Draft"
+    docForm.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        if (e.target.tagName.toLowerCase() === 'textarea') {
+          return;
+        }
+        e.preventDefault();
+        const reviewBtn = docForm.querySelector('button[type="submit"][data-action="review"]');
+        if (reviewBtn) {
+          reviewBtn.click();
+        }
+      }
+    });
+
     docForm.addEventListener('submit', function (e) {
       if (docForm.dataset.submitting === '1') {
         e.preventDefault();
@@ -118,50 +184,190 @@
     }, { capture: false });
   }
 
-  // Autocomplete suggestions
-  if (typeof window.SUGGEST_API !== 'undefined' && window.SUGGEST_ACCOUNT_ID) {
-    let debounce;
-    document.querySelectorAll('.suggest').forEach((input) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'suggest-wrap';
-      input.parentNode.insertBefore(wrap, input);
-      wrap.appendChild(input);
-      const dropdown = document.createElement('div');
-      dropdown.className = 'suggest-dropdown';
-      wrap.appendChild(dropdown);
+  // Initialize Select2 for suggestible fields
+  if (typeof $ !== 'undefined' && typeof window.SUGGEST_API !== 'undefined' && window.SUGGEST_ACCOUNT_ID) {
+    const initSelect2 = () => {
+      $('.suggest:not(textarea):not(.select2-initialized)').each(function() {
+        const $el = $(this);
+        $el.addClass('select2-initialized');
+        const fieldKey = $el.data('field');
+        const currentValue = $el.val();
+        
+        const $select = $('<select></select>');
+        $select.attr('name', $el.attr('name'));
+        $select.attr('class', $el.attr('class'));
+        $select.attr('data-field', fieldKey);
+        $select.attr('required', $el.attr('required') ? 'required' : null);
+        $select.attr('id', $el.attr('id') ? $el.attr('id') : null);
 
-      input.addEventListener('input', () => {
-        clearTimeout(debounce);
-        debounce = setTimeout(async () => {
-          const field = input.dataset.field;
-          const q = input.value.trim();
-          if (!field || q.length < 1) {
-            dropdown.classList.remove('show');
-            return;
-          }
-          const url = `${window.SUGGEST_API}?account_id=${window.SUGGEST_ACCOUNT_ID}&field=${encodeURIComponent(field)}&q=${encodeURIComponent(q)}`;
-          try {
-            const res = await fetch(url);
-            const items = await res.json();
-            dropdown.innerHTML = '';
-            items.forEach((val) => {
-              const btn = document.createElement('button');
-              btn.type = 'button';
-              btn.textContent = val;
-              btn.addEventListener('click', () => {
-                input.value = val;
-                dropdown.classList.remove('show');
+        if (currentValue) {
+          const $option = $('<option></option>');
+          $option.attr('value', currentValue);
+          $option.text(currentValue);
+          $option.prop('selected', true);
+          $select.append($option);
+        }
+
+        $el.replaceWith($select);
+
+        $select.select2({
+          theme: 'bootstrap-5',
+          placeholder: 'Select or type a value',
+          allowClear: false,
+          tags: true,
+          tokenSeparators: [],
+          createTag: function(params) {
+            const term = $.trim(params.term);
+            if (term === '') {
+              return null;
+            }
+            return {
+              id: term,
+              text: term,
+              newTag: true
+            };
+          },
+          ajax: {
+            url: window.SUGGEST_API,
+            type: 'GET',
+            dataType: 'json',
+            delay: 250,
+            data: function(params) {
+              return {
+                account_id: window.SUGGEST_ACCOUNT_ID,
+                field: fieldKey,
+                q: params.term || ''
+              };
+            },
+            processResults: function(data) {
+              return {
+                results: data.map(function(val) {
+                  return {
+                    id: val,
+                    text: val
+                  };
+                })
+              };
+            },
+            cache: true
+          },
+          minimumInputLength: 0
+        });
+
+        $select.on('select2:opening', function() {
+          if (!$select.data('suggestions-loaded')) {
+            $.ajax({
+              url: window.SUGGEST_API,
+              type: 'GET',
+              dataType: 'json',
+              data: {
+                account_id: window.SUGGEST_ACCOUNT_ID,
+                field: fieldKey,
+                q: ''
+              }
+            }).then(function(data) {
+              const currentVal = $select.val();
+              $select.empty();
+              if (currentVal) {
+                $select.append(new Option(currentVal, currentVal, true, true));
+              }
+              data.forEach(function(val) {
+                if (val !== currentVal) {
+                  $select.append(new Option(val, val, false, false));
+                }
               });
-              dropdown.appendChild(btn);
+              $select.data('suggestions-loaded', true);
             });
-            dropdown.classList.toggle('show', items.length > 0);
-          } catch (_) {}
-        }, 250);
+          }
+        });
+
+        $select.on('change', function() {
+          recalcTotals();
+        });
       });
 
-      document.addEventListener('click', (ev) => {
-        if (!wrap.contains(ev.target)) dropdown.classList.remove('show');
+      $('textarea.suggest:not(.select2-initialized)').each(function() {
+        const $el = $(this);
+        $el.addClass('select2-initialized');
+        $el.attr('data-suggestible', 'true');
+        $el.addClass('textarea-suggest');
       });
-    });
+    };
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSelect2);
+    } else {
+      initSelect2();
+    }
+    
+    // For textarea fields with suggest class, add a simple autocomplete via keyup
+    // This maintains the textarea appearance while providing suggestions
+    if (typeof window.SUGGEST_API !== 'undefined' && window.SUGGEST_ACCOUNT_ID) {
+      let debounceTimer;
+      let currentDropdown = null;
+      
+      document.addEventListener('keyup', function(e) {
+        const $el = $(e.target);
+        if (!$el.hasClass('suggest') || !$el.is('textarea')) return;
+        
+        const fieldKey = $el.data('field');
+        const value = $el.val();
+        const query = value.split('\n').pop().trim(); // Get last line for searching
+        
+        clearTimeout(debounceTimer);
+        if (!query) {
+          if (currentDropdown) currentDropdown.remove();
+          return;
+        }
+        
+        debounceTimer = setTimeout(function() {
+          const url = `${window.SUGGEST_API}?account_id=${window.SUGGEST_ACCOUNT_ID}&field=${encodeURIComponent(fieldKey)}&q=${encodeURIComponent(query)}`;
+          
+          fetch(url)
+            .then(r => r.json())
+            .then(data => {
+              if (!data || data.length === 0) return;
+              
+              // Remove old dropdown
+              if (currentDropdown) currentDropdown.remove();
+              
+              const dropdown = document.createElement('div');
+              dropdown.className = 'textarea-suggestions';
+              
+              data.slice(0, 5).forEach(val => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = val;
+                btn.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  const lines = $el.val().split('\n');
+                  lines[lines.length - 1] = val;
+                  $el.val(lines.join('\n'));
+                  dropdown.remove();
+                  $el.trigger('change');
+                });
+                dropdown.appendChild(btn);
+              });
+              
+              const rect = $el[0].getBoundingClientRect();
+              dropdown.style.position = 'fixed';
+              dropdown.style.top = (rect.bottom + 5) + 'px';
+              dropdown.style.left = rect.left + 'px';
+              dropdown.style.width = rect.width + 'px';
+              
+              document.body.appendChild(dropdown);
+              currentDropdown = dropdown;
+            });
+        }, 250);
+      }, true);
+      
+      // Close dropdown on click outside
+      document.addEventListener('click', function(e) {
+        if (currentDropdown && !$(e.target).hasClass('suggest')) {
+          currentDropdown.remove();
+          currentDropdown = null;
+        }
+      });
+    }
   }
 })();

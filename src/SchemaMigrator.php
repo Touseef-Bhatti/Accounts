@@ -28,6 +28,7 @@ class SchemaMigrator
         self::migrateDocumentSets($pdo);
         self::migrateLineItems($pdo);
         self::migrateGatePasses($pdo);
+        self::migrateFieldSuggestions($pdo);
     }
 
     private static function columnExists(PDO $pdo, string $table, string $column): bool
@@ -109,5 +110,43 @@ CREATE TABLE gate_passes (
     FOREIGN KEY (document_set_id) REFERENCES document_sets(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
+    }
+
+    private static function migrateFieldSuggestions(PDO $pdo): void
+    {
+        if (self::tableExists($pdo, 'field_suggestions')) {
+            $pdo->exec('DROP TABLE IF EXISTS field_suggestions');
+        }
+        if (!self::tableExists($pdo, 'accounts')) {
+            return;
+        }
+
+        $suggestionFields = [
+            'pi_invoice_no', 'ci_invoice_no', 'contract_no', 'lc_no', 'exporter_name', 
+            'exporter_address', 'buyer_name', 'buyer_address', 'consignee_name', 
+            'consignee_address', 'notify_party', 'country_origin', 'country_destination', 
+            'port_loading', 'port_discharge', 'vessel_flight', 'bl_awb_no', 'incoterms', 
+            'payment_terms', 'shipping_marks', 'bank_details', 'remarks', 'invoice_ref', 
+            'container_no', 'seal_no', 'seller_name', 'seller_address', 'product_description', 
+            'shipment_period', 'governing_law', 'inspection_terms', 'force_majeure', 
+            'arbitration', 'special_conditions', 'cargo_description', 'vehicle_no', 
+            'driver_name', 'driver_nic', 'driver_mobile', 'authorization_note', 
+            'line_description', 'line_hs_code', 'line_remarks'
+        ];
+
+        foreach ($suggestionFields as $field) {
+            $tableName = 'suggest_' . $field;
+            if (!self::tableExists($pdo, $tableName)) {
+                $pdo->exec("CREATE TABLE {$tableName} (
+                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    account_id INT UNSIGNED NOT NULL,
+                    field_value TEXT NOT NULL,
+                    use_count INT UNSIGNED DEFAULT 1,
+                    last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY uk_suggestion (account_id, field_value(191)),
+                    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+        }
     }
 }

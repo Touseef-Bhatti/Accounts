@@ -271,19 +271,33 @@ SQL, 'gate_passes');
             $errors[] = 'Schema migration: ' . $e->getMessage();
         }
 
-        runSql($pdo, <<<'SQL'
-CREATE TABLE IF NOT EXISTS field_suggestions (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    account_id INT UNSIGNED NOT NULL,
-    field_key VARCHAR(128) NOT NULL,
-    field_value TEXT NOT NULL,
-    use_count INT UNSIGNED DEFAULT 1,
-    last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_suggestion (account_id, field_key, field_value(191)),
-    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
-    INDEX idx_suggest_lookup (account_id, field_key)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL, 'field_suggestions');
+        runSql($pdo, 'DROP TABLE IF EXISTS field_suggestions', 'drop field_suggestions');
+
+        $suggestionFields = [
+            'pi_invoice_no', 'ci_invoice_no', 'contract_no', 'lc_no', 'exporter_name', 
+            'exporter_address', 'buyer_name', 'buyer_address', 'consignee_name', 
+            'consignee_address', 'notify_party', 'country_origin', 'country_destination', 
+            'port_loading', 'port_discharge', 'vessel_flight', 'bl_awb_no', 'incoterms', 
+            'payment_terms', 'shipping_marks', 'bank_details', 'remarks', 'invoice_ref', 
+            'container_no', 'seal_no', 'seller_name', 'seller_address', 'product_description', 
+            'shipment_period', 'governing_law', 'inspection_terms', 'force_majeure', 
+            'arbitration', 'special_conditions', 'cargo_description', 'vehicle_no', 
+            'driver_name', 'driver_nic', 'driver_mobile', 'authorization_note', 
+            'line_description', 'line_hs_code', 'line_remarks'
+        ];
+
+        foreach ($suggestionFields as $field) {
+            $tableName = 'suggest_' . $field;
+            runSql($pdo, "CREATE TABLE IF NOT EXISTS {$tableName} (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                account_id INT UNSIGNED NOT NULL,
+                field_value TEXT NOT NULL,
+                use_count INT UNSIGNED DEFAULT 1,
+                last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY uk_suggestion (account_id, field_value(191)),
+                FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", "table: {$tableName}");
+        }
 
         // Seed accounts
         $stmt = $pdo->query("SELECT COUNT(*) FROM accounts");

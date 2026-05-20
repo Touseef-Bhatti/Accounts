@@ -24,8 +24,6 @@ $html = pdf_styles();
 
 $html .= "<div class='sample-doc'>";
 
-$html .= "<p class='for-company'>For {$company}</p>";
-
 $html .= "<h1 class='sample-title'>PROFORMA INVOICE</h1>";
 
 

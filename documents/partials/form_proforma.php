@@ -1,4 +1,4 @@
-<?php /** @var array $p @var array $prefill @var array $linesP @var string $refNo */ ?>
+    <?php /** @var array $p @var array $prefill @var array $linesP @var string $refNo */ ?>
 
 <div class="card doc-section shadow-sm mb-4">
 
@@ -20,7 +20,7 @@
 
                 <label class="form-label">Date</label>
 
-                <input type="date" name="pi[invoice_date]" class="form-control" value="<?= e(v($p,'invoice_date', v($prefill,'invoice_date'))) ?>" required>
+                <input type="text" name="pi[invoice_date]" class="form-control date-picker" placeholder="DD-MM-YYYY" value="<?= e(format_date(v($p,'invoice_date', v($prefill,'invoice_date')))) ?>" required>
 
             </div>
 
@@ -28,7 +28,7 @@
 
                 <label class="form-label">Validity</label>
 
-                <input type="date" name="pi[validity_date]" class="form-control" value="<?= e(v($p,'validity_date')) ?>">
+                <input type="text" name="pi[validity_date]" class="form-control date-picker" placeholder="DD-MM-YYYY" value="<?= e(format_date(v($p,'validity_date'))) ?>">
 
             </div>
 
@@ -64,69 +64,28 @@
 
             </div>
 
-            <div class="col-md-6">
-
-                <label class="form-label">Buyer</label>
-
-                <input name="pi[buyer_name]" class="form-control suggest" data-field="buyer_name" value="<?= e(v($p,'buyer_name')) ?>" required>
-
-            </div>
-
-            <div class="col-md-6">
-
-                <label class="form-label">Consignee</label>
-
-                <input name="pi[consignee_name]" class="form-control suggest" data-field="consignee_name" value="<?= e(v($p,'consignee_name')) ?>">
-
-            </div>
-
-            <div class="col-md-6">
-
-                <label class="form-label">Buyer Address</label>
-
-                <textarea name="pi[buyer_address]" class="form-control suggest" data-field="buyer_address" rows="2"><?= e(v($p,'buyer_address')) ?></textarea>
-
-            </div>
-
-            <div class="col-md-6">
-
-                <label class="form-label">Consignee Address</label>
-
-                <textarea name="pi[consignee_address]" class="form-control suggest" data-field="consignee_address" rows="2"><?= e(v($p,'consignee_address')) ?></textarea>
-
-            </div>
-
-            <div class="col-12">
-
-                <label class="form-label">Notify Party / Buyer Contact</label>
-
-                <textarea name="pi[notify_party]" class="form-control suggest" data-field="notify_party" rows="2"><?= e(v($p,'notify_party')) ?></textarea>
-
-            </div>
-
-            <div class="col-md-3"><label class="form-label">Country of Origin</label>
-
-                <input name="pi[country_origin]" class="form-control" value="<?= e(v($p,'country_origin','Pakistan')) ?>"></div>
-
+            <div class="col-md-6"><label class="form-label">Buyer</label>
+                <input name="pi[buyer_name]" class="form-control suggest" data-field="buyer_name" value="<?= e(v($p,'buyer_name')) ?>" required></div>
+            <div class="col-md-6"><label class="form-label">Consignee</label>
+                <input name="pi[consignee_name]" class="form-control suggest" data-field="consignee_name" value="<?= e(v($p,'consignee_name')) ?>"></div>
+            <div class="col-md-6"><label class="form-label">Buyer Address</label>
+                <textarea name="pi[buyer_address]" class="form-control suggest" data-field="buyer_address" rows="2"><?= e(v($p,'buyer_address')) ?></textarea></div>
+            <div class="col-md-6"><label class="form-label">Consignee Address</label>
+                <textarea name="pi[consignee_address]" class="form-control suggest" data-field="consignee_address" rows="2"><?= e(v($p,'consignee_address')) ?></textarea></div>
+            <div class="col-12"><label class="form-label">Notify Party</label>
+                <textarea name="pi[notify_party]" class="form-control suggest" data-field="notify_party" rows="2"><?= e(v($p,'notify_party')) ?></textarea></div>
+            <div class="col-md-3"><label class="form-label">Origin</label>
+                <input name="pi[country_origin]" class="form-control suggest" data-field="country_origin" value="<?= e(v($p,'country_origin','Pakistan')) ?>"></div>
             <div class="col-md-3"><label class="form-label">Destination</label>
-
                 <input name="pi[country_destination]" class="form-control suggest" data-field="country_destination" value="<?= e(v($p,'country_destination')) ?>"></div>
-
-            <div class="col-md-3"><label class="form-label">Port of Loading</label>
-
-                <input name="pi[port_loading]" class="form-control suggest" data-field="port_loading" value="<?= e(v($p,'port_loading')) ?>"></div>
-
-            <div class="col-md-3"><label class="form-label">Port of Discharge</label>
-
+            <div class="col-md-3"><label class="form-label">Port Loading</label>
+                <input name="pi[port_loading]" class="form-control suggest" data-field="port_loading" value="<?= e(v($p,'port_loading','Karachi')) ?>"></div>
+            <div class="col-md-3"><label class="form-label">Port Discharge</label>
                 <input name="pi[port_discharge]" class="form-control suggest" data-field="port_discharge" value="<?= e(v($p,'port_discharge')) ?>"></div>
-
-            <div class="col-md-3"><label class="form-label">Incoterms</label>
-
-                <input name="pi[incoterms]" class="form-control" value="<?= e(v($p,'incoterms','CFR')) ?>"></div>
-
-            <div class="col-md-9"><label class="form-label">Payment Terms</label>
-
-                <input name="pi[payment_terms]" class="form-control suggest" data-field="payment_terms" value="<?= e(v($p,'payment_terms', v($prefill,'payment_terms'))) ?>"></div>
+            <div class="col-md-4"><label class="form-label">Incoterms</label>
+                <input name="pi[incoterms]" class="form-control suggest" data-field="incoterms" value="<?= e(v($p,'incoterms','CFR')) ?>"></div>
+            <div class="col-12"><label class="form-label">Payment Terms</label>
+                <input name="pi[payment_terms]" class="form-control suggest" data-field="payment_terms" value="<?= e(v($p,'payment_terms', v($prefill,'payment_terms', '100% irrevocable L/C at sight'))) ?>"></div>
 
             <div class="col-12"><label class="form-label">Shipping Marks</label>
 
@@ -150,13 +109,18 @@
 
                 <tr>
 
-                    <td><input name="lines_proforma[][description]" class="form-control form-control-sm" value="<?= e($row['description'] ?? '') ?>"></td>
+                    <td><input name="lines_proforma[][description]" class="form-control form-control-sm suggest" data-field="line_description" value="<?= e($row['description'] ?? '') ?>"></td>
 
-                    <td><input name="lines_proforma[][hs_code]" class="form-control form-control-sm" value="<?= e($row['hs_code'] ?? '') ?>"></td>
+                    <td><input name="lines_proforma[][hs_code]" class="form-control form-control-sm suggest" data-field="line_hs_code" value="<?= e($row['hs_code'] ?? '') ?>"></td>
 
                     <td><input name="lines_proforma[][quantity]" type="number" step="0.001" class="form-control form-control-sm qty" value="<?= e($row['quantity'] ?? '') ?>"></td>
 
-                    <td><input name="lines_proforma[][unit]" class="form-control form-control-sm" value="<?= e($row['unit'] ?? 'MT') ?>"></td>
+                    <td>
+                        <select name="lines_proforma[][unit]" class="form-select form-select-sm">
+                            <option value="MT" <?= ($row['unit'] ?? 'MT') === 'MT' ? 'selected' : '' ?>>MT</option>
+                            <option value="KG" <?= ($row['unit'] ?? 'MT') === 'KG' ? 'selected' : '' ?>>KG</option>
+                        </select>
+                    </td>
 
                     <td><input name="lines_proforma[][unit_price]" type="number" step="0.0001" class="form-control form-control-sm price" value="<?= e($row['unit_price'] ?? '') ?>"></td>
 

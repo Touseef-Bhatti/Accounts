@@ -6,7 +6,7 @@ function pdf_styles(): string
 <style>
 @page { margin: 12mm 10mm; }
 body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #111; line-height: 1.35; }
-.doc-title { text-align: center; font-size: 16px; font-weight: bold; text-transform: uppercase; margin: 8px 0 12px; border-bottom: 2px solid #1a365d; padding-bottom: 4px; color: #1a365d; }
+.doc-title { text-align: center; font-size: 20px; font-weight: bold; text-transform: uppercase; margin: 8px 0 12px; border-bottom: 2px solid #1a365d; padding-bottom: 4px; color: #1a365d; }
 .header-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
 .header-table td { vertical-align: top; }
 .company-block { font-size: 11px; }
@@ -27,7 +27,7 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #111; line-
 .text-pre { white-space: pre-wrap; }
 .sample-doc { font-size: 10px; }
 .for-company { font-size: 11px; font-weight: bold; margin: 0 0 4px; }
-.sample-title { text-align: center; font-size: 16px; font-weight: bold; text-transform: uppercase; margin: 10px 0 14px; letter-spacing: 0.5px; }
+.sample-title { text-align: center; font-size: 20px; font-weight: bold; text-transform: uppercase; margin: 10px 0 14px; letter-spacing: 0.5px; }
 .sample-split td { padding: 6px 8px; vertical-align: top; font-size: 10px; }
 .sample-block { margin: 10px 0; padding: 6px 0; }
 .sample-items th { background: #333; color: #fff; text-align: center; font-size: 9px; }
@@ -75,7 +75,7 @@ function pdf_header(array $set, string $docTitle): string
             </td>
             <td width='25%' style='text-align:right;font-size:9px'>
                 <strong>Ref:</strong> " . htmlspecialchars($set['reference_no'] ?? '') . "<br>
-                <strong>Date:</strong> " . date('d-M-Y') . "
+                <strong>Date:</strong> " . date('d-m-Y') . "
             </td>
         </tr>
     </table>
