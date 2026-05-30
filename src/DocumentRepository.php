@@ -200,38 +200,70 @@ class DocumentRepository
         ?string $type = null,
         ?string $startDate = null,
         ?string $endDate = null,
+        ?string $buyerSearch = null,
         string $sortBy = 'created_at',
         string $sortOrder = 'DESC',
         int $limit = 100
     ): array {
         $pdo = Database::connection();
 
-        $sql = 'SELECT id, reference_no, doc_type, status, created_at FROM document_sets WHERE account_id = ?';
+        $sql = 'SELECT ds.id, ds.reference_no, ds.doc_type, ds.status, ds.created_at,
+                       COALESCE(pi.buyer_name, ci.buyer_name, pl.buyer_name, ec.buyer_name, \'\') AS buyer_name
+                FROM document_sets ds
+                LEFT JOIN proforma_invoices pi ON pi.document_set_id = ds.id
+                LEFT JOIN commercial_invoices ci ON ci.document_set_id = ds.id
+                LEFT JOIN packing_lists pl ON pl.document_set_id = ds.id
+                LEFT JOIN export_contracts ec ON ec.document_set_id = ds.id
+                WHERE ds.account_id = ?';
         $params = [$accountId];
 
         if ($type !== null && $type !== '') {
-            $sql .= ' AND doc_type = ?';
+            $sql .= ' AND ds.doc_type = ?';
             $params[] = $type;
         }
 
         if ($startDate !== null && $startDate !== '') {
-            $sql .= ' AND DATE(created_at) >= ?';
+            $sql .= ' AND DATE(ds.created_at) >= ?';
             $params[] = $startDate;
         }
 
         if ($endDate !== null && $endDate !== '') {
-            $sql .= ' AND DATE(created_at) <= ?';
+            $sql .= ' AND DATE(ds.created_at) <= ?';
             $params[] = $endDate;
         }
 
-        $allowedSortCols = ['created_at', 'doc_type', 'reference_no'];
+        if ($buyerSearch !== null && $buyerSearch !== '') {
+            $sql .= ' AND (
+                pi.buyer_name LIKE ? OR 
+                ci.buyer_name LIKE ? OR 
+                pl.buyer_name LIKE ? OR 
+                ec.buyer_name LIKE ?
+            )';
+            $likeVal = '%' . $buyerSearch . '%';
+            $params[] = $likeVal;
+            $params[] = $likeVal;
+            $params[] = $likeVal;
+            $params[] = $likeVal;
+        }
+
+        $allowedSortCols = ['created_at', 'doc_type', 'reference_no', 'buyer_name'];
         if (!in_array($sortBy, $allowedSortCols, true)) {
             $sortBy = 'created_at';
         }
 
+        if ($sortBy === 'created_at') {
+            $sortByCol = 'ds.created_at';
+        } elseif ($sortBy === 'doc_type') {
+            $sortByCol = 'ds.doc_type';
+        } elseif ($sortBy === 'reference_no') {
+            $sortByCol = 'ds.reference_no';
+        } else {
+            $sortByCol = 'buyer_name';
+        }
+
         $sortOrder = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
 
-        $sql .= " ORDER BY {$sortBy} {$sortOrder} LIMIT ?";
+        $sql .= " ORDER BY {$sortByCol} {$sortOrder} LIMIT ?";
 
         $stmt = $pdo->prepare($sql);
 

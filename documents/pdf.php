@@ -54,6 +54,9 @@ if ($type === '' || !DocumentRepository::isValidDocType($type)) {
     $type = DocumentRepository::inferDocType($data);
 }
 
+// Set the PDF top offset for the current doc type
+$GLOBALS['pdf_top_offset'] = \App\AccountRepository::getTopOffset((int) $set['account_id'], $type);
+
 require_once dirname(__DIR__) . '/templates/pdf_layout.php';
 
 $renderers = [

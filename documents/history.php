@@ -14,9 +14,10 @@ $accountId = (int) ($_SESSION['account_id'] ?? 0);
 $selectedType = $_GET['type'] ?? '';
 $startDate = $_GET['start_date'] ?? '';
 $endDate = $_GET['end_date'] ?? '';
+$buyerSearch = trim($_GET['buyer'] ?? '');
 $sort = $_GET['sort'] ?? 'date_desc';
 
-$filtersActive = ($selectedType !== '' || $startDate !== '' || $endDate !== '' || $sort !== 'date_desc');
+$filtersActive = ($selectedType !== '' || $startDate !== '' || $endDate !== '' || $buyerSearch !== '' || $sort !== 'date_desc');
 
 // Parse sort parameter
 $sortBy = 'created_at';
@@ -57,6 +58,7 @@ if ($accountId) {
         $selectedType !== '' ? $selectedType : null,
         $startDate !== '' ? $startDate : null,
         $endDate !== '' ? $endDate : null,
+        $buyerSearch !== '' ? $buyerSearch : null,
         $sortBy,
         $sortOrder
     );
@@ -71,7 +73,11 @@ layout_header('Document History');
 <?php else: ?>
 
 <form method="get" class="row g-2 mb-4 align-items-end p-3 bg-light rounded border">
-    <div class="col-md-3">
+    <div class="col-md-4">
+        <label for="buyer" class="form-label small fw-semibold text-muted">Search by Buyer</label>
+        <input type="text" name="buyer" id="buyer" class="form-control form-control-sm" placeholder="Enter buyer name..." value="<?= e($buyerSearch) ?>">
+    </div>
+    <div class="col-md-2">
         <label for="type" class="form-label small fw-semibold text-muted">Filter by Type</label>
         <select name="type" id="type" class="form-select form-select-sm">
             <option value="">All Types</option>
@@ -80,15 +86,15 @@ layout_header('Document History');
             <?php endforeach; ?>
         </select>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <label for="start_date" class="form-label small fw-semibold text-muted">From Date</label>
         <input type="date" name="start_date" id="start_date" class="form-control form-control-sm" value="<?= e($startDate) ?>">
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <label for="end_date" class="form-label small fw-semibold text-muted">To Date</label>
         <input type="date" name="end_date" id="end_date" class="form-control form-control-sm" value="<?= e($endDate) ?>">
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <label for="sort" class="form-label small fw-semibold text-muted">Sort By</label>
         <select name="sort" id="sort" class="form-select form-select-sm">
             <option value="date_desc" <?= $sort === 'date_desc' ? 'selected' : '' ?>>Date: Newest First</option>
@@ -119,13 +125,14 @@ layout_header('Document History');
 <?php else: ?>
 <div class="table-responsive">
     <table class="table table-hover align-middle">
-        <thead><tr><th>Reference</th><th>Type</th><th>Status</th><th>Created</th><th></th></tr></thead>
+        <thead><tr><th>Reference</th><th>Buyer</th><th>Type</th><th>Status</th><th>Created</th><th></th></tr></thead>
         <tbody>
         <?php foreach ($history as $row):
             $typeLabel = DocumentRepository::docTypeLabel($row['doc_type'] ?? 'proforma');
         ?>
         <tr>
             <td><?= e($row['reference_no']) ?></td>
+            <td><?= e($row['buyer_name'] ?? '') ?></td>
             <td><span class="badge bg-info text-dark"><?= e($typeLabel) ?></span></td>
             <td><span class="badge bg-<?= $row['status'] === 'completed' ? 'success' : 'secondary' ?>"><?= e($row['status']) ?></span></td>
             <td><?= e(date('d M Y H:i', strtotime($row['created_at']))) ?></td>

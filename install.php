@@ -334,6 +334,17 @@ CREATE TABLE IF NOT EXISTS gate_passes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL, 'gate_passes');
 
+        runSqlStandalone($pdo, <<<'SQL'
+CREATE TABLE IF NOT EXISTS app_settings (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    account_id INT UNSIGNED NOT NULL,
+    setting_key VARCHAR(128) NOT NULL,
+    setting_value TEXT DEFAULT NULL,
+    UNIQUE KEY uk_account_key (account_id, setting_key),
+    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL, 'app_settings');
+
         function columnExistsStandalone(PDO $pdo, string $table, string $column): bool
         {
             $stmt = $pdo->prepare(

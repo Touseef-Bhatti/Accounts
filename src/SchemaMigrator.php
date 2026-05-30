@@ -31,6 +31,7 @@ class SchemaMigrator
         self::migrateFieldSuggestions($pdo);
         self::migrateAuthorizedEmails($pdo);
         self::migrateLoginAttempts($pdo);
+        self::migrateAppSettings($pdo);
     }
     
     private static function migrateLoginAttempts(PDO $pdo): void
@@ -181,5 +182,22 @@ SQL);
         if (!self::columnExists($pdo, 'authorized_emails', 'password')) {
             $pdo->exec('ALTER TABLE authorized_emails ADD COLUMN password VARCHAR(255) DEFAULT NULL AFTER name');
         }
+    }
+
+    private static function migrateAppSettings(PDO $pdo): void
+    {
+        if (self::tableExists($pdo, 'app_settings')) {
+            return;
+        }
+        $pdo->exec(<<<'SQL'
+CREATE TABLE app_settings (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    account_id INT UNSIGNED NOT NULL,
+    setting_key VARCHAR(128) NOT NULL,
+    setting_value TEXT DEFAULT NULL,
+    UNIQUE KEY uk_account_key (account_id, setting_key),
+    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL);
     }
 }

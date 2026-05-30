@@ -2,9 +2,11 @@
 /** Shared PDF styles — professional export document layout */
 function pdf_styles(): string
 {
-    return <<<'CSS'
+    $topOffset = (int) ($GLOBALS['pdf_top_offset'] ?? 12);
+    $topMm = max(0, $topOffset);
+    return <<<CSS
 <style>
-@page { margin: 12mm 10mm; }
+@page { margin: {$topMm}mm 10mm 12mm 10mm; }
 body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #111; line-height: 1.35; }
 .doc-title { text-align: center; font-size: 20px; font-weight: bold; text-transform: uppercase; margin: 8px 0 12px; border-bottom: 2px solid #1a365d; padding-bottom: 4px; color: #1a365d; }
 .header-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }

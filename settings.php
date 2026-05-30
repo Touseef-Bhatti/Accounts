@@ -61,6 +61,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'Company details updated.';
         $accounts = AccountRepository::all();
     }
+
+    if (isset($_POST['update_offsets'])) {
+        $docTypes = ['proforma', 'commercial', 'packing', 'contract', 'gate_pass'];
+        foreach ($docTypes as $docType) {
+            $offsetVal = trim($_POST['pdf_top_offset_' . $docType] ?? '40');
+            AccountRepository::setSetting($accountId, 'pdf_top_offset_' . $docType, $offsetVal);
+        }
+        $message = 'PDF print top offsets updated successfully.';
+        $accounts = AccountRepository::all();
+    }
 }
 
 layout_header('Settings');
@@ -119,6 +129,52 @@ layout_header('Settings');
                             <input name="default_currency" class="form-control" value="<?= e($acc['default_currency']) ?>"></div>
                     </div>
                     <button type="submit" class="btn btn-primary mt-3">Save Company Details</button>
+                </form>
+                <hr class="my-4">
+                <h5 class="h6 mb-3 text-primary fw-semibold"><i class="bi bi-printer"></i> PDF Print Top Offsets (mm)</h5>
+                <form method="post">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="account_id" value="<?= (int)$acc['id'] ?>">
+                    <input type="hidden" name="update_offsets" value="1">
+                    <p class="text-muted small mb-3">Adjust the top margin to skip the pre-printed letterhead area. Set to 0 if printing on plain paper.</p>
+                    <div class="row g-3">
+                        <div class="col-md-4 col-sm-6">
+                            <label class="form-label small">Proforma Invoice</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="pdf_top_offset_proforma" class="form-control" min="0" max="250" value="<?= (int)App\AccountRepository::getTopOffset((int)$acc['id'], 'proforma') ?>" required>
+                                <span class="input-group-text">mm</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
+                            <label class="form-label small">Commercial Invoice</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="pdf_top_offset_commercial" class="form-control" min="0" max="250" value="<?= (int)App\AccountRepository::getTopOffset((int)$acc['id'], 'commercial') ?>" required>
+                                <span class="input-group-text">mm</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
+                            <label class="form-label small">Packing List</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="pdf_top_offset_packing" class="form-control" min="0" max="250" value="<?= (int)App\AccountRepository::getTopOffset((int)$acc['id'], 'packing') ?>" required>
+                                <span class="input-group-text">mm</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
+                            <label class="form-label small">Export Contract</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="pdf_top_offset_contract" class="form-control" min="0" max="250" value="<?= (int)App\AccountRepository::getTopOffset((int)$acc['id'], 'contract') ?>" required>
+                                <span class="input-group-text">mm</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
+                            <label class="form-label small">Gate Pass</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="pdf_top_offset_gate_pass" class="form-control" min="0" max="250" value="<?= (int)App\AccountRepository::getTopOffset((int)$acc['id'], 'gate_pass') ?>" required>
+                                <span class="input-group-text">mm</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-secondary btn-sm mt-3">Save PDF Offsets</button>
                 </form>
             </div>
         </div>

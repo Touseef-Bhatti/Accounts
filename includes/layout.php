@@ -28,7 +28,7 @@ function layout_header(string $title, string $active = ''): void
         <div class="collapse navbar-collapse" id="navMain">
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
                 <?php if (App\Auth::check()): ?>
-                    <li class="nav-item"><span class="nav-link small opacity-75"><?= e(App\Auth::userEmail()) ?></span></li>
+                    <li class="nav-item"><span class="nav-link small opacity-75"><?= e(App\Auth::userName() ?: App\Auth::userEmail()) ?></span></li>
                     <li class="nav-item"><a class="nav-link" href="<?= e(base_url('settings.php')) ?>">Settings</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= e(base_url('logout.php')) ?>">Logout</a></li>
                 <?php endif; ?>
