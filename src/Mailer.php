@@ -11,7 +11,7 @@ class Mailer
         $minutes = (int) env('OTP_EXPIRY_MINUTES', 15);
         $subject = 'Your login verification code';
         $htmlBody = "<p>Your verification code is:</p><p style='font-size:28px;font-weight:bold;letter-spacing:4px'>{$otp}</p><p>This code expires in {$minutes} minutes.</p><p>If you did not request this, ignore this email.</p>";
-        $textBody = "Your verification code is: {$otp}. Expires in {$minutes} minutes.";
+        $textBody = "Your verification code is:\r\n\r\n{$otp}\r\n\r\nThis code expires in {$minutes} minutes.\r\n\r\nIf you did not request this, ignore this email.";
         
         $from = (string) env('MAIL_FROM_ADDRESS', '');
         if (empty($from)) {
@@ -60,7 +60,7 @@ class Mailer
         
         $headers = "From: {$fromName} <{$from}>\r\n";
         $headers .= "MIME-Version: 1.0\r\n";
-        $headers .= "Content-Type: multipart/alternative; boundary=\"boundary=\"\r\n";
+        $headers .= "Content-Type: multipart/alternative; boundary=\"boundary\"\r\n";
         $message = "--boundary\r\n";
         $message .= "Content-Type: text/plain; charset=UTF-8\r\n\r\n";
         $message .= $textBody . "\r\n";
