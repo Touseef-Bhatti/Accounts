@@ -11,7 +11,56 @@ use App\DocumentRepository;
 Auth::requireLogin();
 
 $accountId = (int) ($_SESSION['account_id'] ?? 0);
-$history = $accountId ? DocumentRepository::listByAccount($accountId) : [];
+$selectedType = $_GET['type'] ?? '';
+$startDate = $_GET['start_date'] ?? '';
+$endDate = $_GET['end_date'] ?? '';
+$sort = $_GET['sort'] ?? 'date_desc';
+
+$filtersActive = ($selectedType !== '' || $startDate !== '' || $endDate !== '' || $sort !== 'date_desc');
+
+// Parse sort parameter
+$sortBy = 'created_at';
+$sortOrder = 'DESC';
+
+switch ($sort) {
+    case 'date_asc':
+        $sortBy = 'created_at';
+        $sortOrder = 'ASC';
+        break;
+    case 'type_asc':
+        $sortBy = 'doc_type';
+        $sortOrder = 'ASC';
+        break;
+    case 'type_desc':
+        $sortBy = 'doc_type';
+        $sortOrder = 'DESC';
+        break;
+    case 'ref_asc':
+        $sortBy = 'reference_no';
+        $sortOrder = 'ASC';
+        break;
+    case 'ref_desc':
+        $sortBy = 'reference_no';
+        $sortOrder = 'DESC';
+        break;
+    case 'date_desc':
+    default:
+        $sortBy = 'created_at';
+        $sortOrder = 'DESC';
+        break;
+}
+
+$history = [];
+if ($accountId) {
+    $history = DocumentRepository::listByAccount(
+        $accountId,
+        $selectedType !== '' ? $selectedType : null,
+        $startDate !== '' ? $startDate : null,
+        $endDate !== '' ? $endDate : null,
+        $sortBy,
+        $sortOrder
+    );
+}
 
 layout_header('Document History');
 ?>
@@ -19,8 +68,54 @@ layout_header('Document History');
 <?php if (!$accountId): ?>
 <p class="text-muted">Select a company from the home page first.</p>
 <a href="<?= e(base_url('index.php')) ?>" class="btn btn-primary">Select Company</a>
-<?php elseif (!$history): ?>
-<p class="text-muted">No documents yet.</p>
+<?php else: ?>
+
+<form method="get" class="row g-2 mb-4 align-items-end p-3 bg-light rounded border">
+    <div class="col-md-3">
+        <label for="type" class="form-label small fw-semibold text-muted">Filter by Type</label>
+        <select name="type" id="type" class="form-select form-select-sm">
+            <option value="">All Types</option>
+            <?php foreach (DocumentRepository::DOC_TYPES as $t): ?>
+                <option value="<?= e($t) ?>" <?= $selectedType === $t ? 'selected' : '' ?>><?= e(DocumentRepository::docTypeLabel($t)) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="start_date" class="form-label small fw-semibold text-muted">From Date</label>
+        <input type="date" name="start_date" id="start_date" class="form-control form-control-sm" value="<?= e($startDate) ?>">
+    </div>
+    <div class="col-md-3">
+        <label for="end_date" class="form-label small fw-semibold text-muted">To Date</label>
+        <input type="date" name="end_date" id="end_date" class="form-control form-control-sm" value="<?= e($endDate) ?>">
+    </div>
+    <div class="col-md-3">
+        <label for="sort" class="form-label small fw-semibold text-muted">Sort By</label>
+        <select name="sort" id="sort" class="form-select form-select-sm">
+            <option value="date_desc" <?= $sort === 'date_desc' ? 'selected' : '' ?>>Date: Newest First</option>
+            <option value="date_asc" <?= $sort === 'date_asc' ? 'selected' : '' ?>>Date: Oldest First</option>
+            <option value="type_asc" <?= $sort === 'type_asc' ? 'selected' : '' ?>>Type: A-Z</option>
+            <option value="type_desc" <?= $sort === 'type_desc' ? 'selected' : '' ?>>Type: Z-A</option>
+            <option value="ref_asc" <?= $sort === 'ref_asc' ? 'selected' : '' ?>>Reference: A-Z</option>
+            <option value="ref_desc" <?= $sort === 'ref_desc' ? 'selected' : '' ?>>Reference: Z-A</option>
+        </select>
+    </div>
+    <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+        <?php if ($filtersActive): ?>
+            <a href="?" class="btn btn-sm btn-outline-secondary">Clear Filters</a>
+        <?php endif; ?>
+        <button type="submit" class="btn btn-sm btn-primary px-3">Apply</button>
+    </div>
+</form>
+
+<?php if (!$history): ?>
+<div class="text-center py-4 border rounded bg-white">
+    <p class="text-muted mb-2">No documents found matching your criteria.</p>
+    <?php if ($filtersActive): ?>
+        <a href="?" class="btn btn-sm btn-secondary">Clear All Filters</a>
+    <?php else: ?>
+        <p class="text-muted mb-0">No documents yet.</p>
+    <?php endif; ?>
+</div>
 <?php else: ?>
 <div class="table-responsive">
     <table class="table table-hover align-middle">
@@ -43,6 +138,7 @@ layout_header('Document History');
         </tbody>
     </table>
 </div>
+<?php endif; ?>
 <?php endif; ?>
 <a href="<?= e(base_url('documents/create.php')) ?>" class="btn btn-primary mt-2">+ New Document Set</a>
 <?php layout_footer(); ?>

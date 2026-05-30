@@ -195,29 +195,55 @@ class DocumentRepository
     }
 
 
-
-    public static function listByAccount(int $accountId, int $limit = 20): array
-
-    {
-
+    public static function listByAccount(
+        int $accountId,
+        ?string $type = null,
+        ?string $startDate = null,
+        ?string $endDate = null,
+        string $sortBy = 'created_at',
+        string $sortOrder = 'DESC',
+        int $limit = 100
+    ): array {
         $pdo = Database::connection();
 
-        $stmt = $pdo->prepare(
+        $sql = 'SELECT id, reference_no, doc_type, status, created_at FROM document_sets WHERE account_id = ?';
+        $params = [$accountId];
 
-            'SELECT id, reference_no, doc_type, status, created_at FROM document_sets
+        if ($type !== null && $type !== '') {
+            $sql .= ' AND doc_type = ?';
+            $params[] = $type;
+        }
 
-             WHERE account_id = ? ORDER BY created_at DESC LIMIT ?'
+        if ($startDate !== null && $startDate !== '') {
+            $sql .= ' AND DATE(created_at) >= ?';
+            $params[] = $startDate;
+        }
 
-        );
+        if ($endDate !== null && $endDate !== '') {
+            $sql .= ' AND DATE(created_at) <= ?';
+            $params[] = $endDate;
+        }
 
-        $stmt->bindValue(1, $accountId, PDO::PARAM_INT);
+        $allowedSortCols = ['created_at', 'doc_type', 'reference_no'];
+        if (!in_array($sortBy, $allowedSortCols, true)) {
+            $sortBy = 'created_at';
+        }
 
-        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+        $sortOrder = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
+
+        $sql .= " ORDER BY {$sortBy} {$sortOrder} LIMIT ?";
+
+        $stmt = $pdo->prepare($sql);
+
+        $paramIndex = 1;
+        foreach ($params as $val) {
+            $stmt->bindValue($paramIndex++, $val);
+        }
+        $stmt->bindValue($paramIndex, $limit, PDO::PARAM_INT);
 
         $stmt->execute();
 
         return $stmt->fetchAll();
-
     }
 
 

@@ -67,6 +67,59 @@
         if (totalInput) {
           totalInput.value = grandTotal.toFixed(2);
         }
+      } else if (type === 'packing') {
+        let totalPackages = 0;
+        let totalGross = 0;
+        let totalNet = 0;
+        let totalCbm = 0;
+
+        table.querySelectorAll('tbody tr').forEach((row) => {
+          const pkgsInput = row.querySelector('input[name*="[packages]"]');
+          const grossInput = row.querySelector('input[name*="[gross_kg]"]');
+          const netInput = row.querySelector('input[name*="[net_kg]"]');
+          const dimInput = row.querySelector('input[name*="[dimensions]"]');
+
+          const pkgs = parseInt(pkgsInput?.value) || 0;
+          const gross = parseFloat(grossInput?.value) || 0;
+          const net = parseFloat(netInput?.value) || 0;
+          const dims = dimInput?.value || '';
+
+          totalPackages += pkgs;
+          totalGross += gross;
+          totalNet += net;
+
+          if (dims) {
+            const matches = dims.match(/(\d+(?:\.\d+)?)\s*[xX*×-]\s*(\d+(?:\.\d+)?)\s*[xX*×-]\s*(\d+(?:\.\d+)?)/);
+            if (matches) {
+              const l = parseFloat(matches[1]);
+              const w = parseFloat(matches[2]);
+              const h = parseFloat(matches[3]);
+              let rowCbm = l * w * h;
+              if (l > 5 || w > 5 || h > 5) {
+                rowCbm = rowCbm / 1000000;
+              }
+              totalCbm += rowCbm * pkgs;
+            }
+          }
+        });
+
+        const totalPkgsInput = document.querySelector('input[name="pl[total_packages]"]');
+        const totalGrossInput = document.querySelector('input[name="pl[total_gross_kg]"]');
+        const totalNetInput = document.querySelector('input[name="pl[total_net_kg]"]');
+        const totalCbmInput = document.querySelector('input[name="pl[total_cbm]"]');
+
+        if (totalPkgsInput && !totalPkgsInput.dataset.manual) {
+          totalPkgsInput.value = totalPackages || 0;
+        }
+        if (totalGrossInput && !totalGrossInput.dataset.manual) {
+          totalGrossInput.value = totalGross.toFixed(3);
+        }
+        if (totalNetInput && !totalNetInput.dataset.manual) {
+          totalNetInput.value = totalNet.toFixed(3);
+        }
+        if (totalCbmInput && !totalCbmInput.dataset.manual) {
+          totalCbmInput.value = totalCbm.toFixed(3);
+        }
       }
     }
     
@@ -89,6 +142,11 @@
     }
     // Contract form inputs
     if (e.target.matches('input[name="ec[quantity]"], input[name="ec[unit_price]"]')) {
+      recalcTotals();
+    }
+    // Packing form inputs (prevent overwriting manual values if edited)
+    if (e.target.matches('input[name="pl[total_packages]"], input[name="pl[total_gross_kg]"], input[name="pl[total_net_kg]"], input[name="pl[total_cbm]"]')) {
+      e.target.dataset.manual = '1';
       recalcTotals();
     }
   });
